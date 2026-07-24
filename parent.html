@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Parent Portal — SNS</title>
+<meta name="theme-color" content="#0d2b55">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><circle cx=%2750%27 cy=%2750%27 r=%2748%27 fill=%27%23c9a84c%27/><text x=%2750%27 y=%2768%27 font-size=%2750%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-weight=%27bold%27 fill=%27%23081a38%27>SN</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="logo-circle">SN</div>
+    <div><div class="school-h1">Sadhana Nivriti School</div><div class="school-h2">Chotpur, Noida | Session 2025-26</div></div>
+    <div class="hdr-right">
+      <span class="pbadge parent">Parent</span>
+      <button class="btn-logout" onclick="SNS.logout()">Logout</button>
+    </div>
+  </div>
+</header>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sb-lbl">My child</div>
+    <button class="sb-item active" data-page="dashboard" onclick="showPage('dashboard')"><span class="sb-icon">🏠</span>Home</button>
+    <button class="sb-item" data-page="attendance" onclick="showPage('attendance')"><span class="sb-icon">📋</span>Attendance</button>
+    <button class="sb-item" data-page="marks" onclick="showPage('marks')"><span class="sb-icon">📝</span>Marks & grades</button>
+    <button class="sb-item" data-page="fees" onclick="showPage('fees')"><span class="sb-icon">💰</span>Fee history</button>
+    <button class="sb-item" data-page="timetable" onclick="showPage('timetable')"><span class="sb-icon">🕐</span>Timetable</button>
+    <div class="sb-lbl">Account</div>
+    <button class="sb-item" data-page="settings" onclick="showPage('settings')"><span class="sb-icon">⚙️</span>Settings</button>
+  </nav>
+  <main class="main">
+    <!-- Search student -->
+    <div class="alert info mb4" id="p-search-alert">
+      <span>Enter your child's admission number to view their details.</span>
+    </div>
+    <div class="fctr mb4" id="p-search-bar">
+      <input type="text" id="p-adm-input" placeholder="Enter admission number (e.g. SNS/2025/0001)" style="padding:9px 14px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;min-width:280px;">
+      <button class="btn btn-gold" onclick="findStudent()">Find my child</button>
+    </div>
+    <div id="p-student-info" class="dn">
+      <div class="card mb4" style="border-left:4px solid var(--gold);">
+        <div class="card-body" style="display:flex;align-items:center;gap:16px;">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--info-bg);display:flex;align-items:center;justify-content:center;font-size:22px;">🎒</div>
+          <div>
+            <div style="font-size:17px;font-weight:700;color:var(--navy);" id="p-name">—</div>
+            <div style="font-size:13px;color:var(--g600);" id="p-class-adm">—</div>
+          </div>
+          <div style="margin-left:auto;text-align:right;">
+            <div id="p-today-att" style="font-size:13px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="pg-dashboard">
+        <div class="pg-title">At a glance</div>
+        <div class="pg-sub" id="p-today"></div>
+        <div class="stats" id="p-stats"></div>
+        <div class="grid2">
+          <div class="card">
+            <div class="card-hdr"><span class="card-ttl">📋 Recent attendance</span></div>
+            <div class="card-body" id="p-att-recent"></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><span class="card-ttl">📝 Recent exam results</span></div>
+            <div class="card-body" id="p-marks-recent"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE -->
+      <div id="pg-attendance" class="dn">
+        <div class="pg-title">Attendance record</div>
+        <div class="pg-sub">Your child's attendance for Session 2025-26</div>
+        <div class="card"><div class="card-body" id="p-att-full"></div></div>
+      </div>
+
+      <!-- MARKS -->
+      <div id="pg-marks" class="dn">
+        <div class="pg-title">Marks & grades</div>
+        <div class="pg-sub">Exam-wise performance report</div>
+        <div class="card"><div class="tw"><table><thead><tr><th>Exam</th><th>Subject</th><th>Date</th><th>Marks</th><th>Max</th><th>%</th><th>Grade</th><th>Result</th></tr></thead>
+        <tbody id="p-marks-tbody"></tbody></table></div></div>
+      </div>
+
+      <!-- FEES -->
+      <div id="pg-fees" class="dn">
+        <div class="pg-title">Fee payment history</div>
+        <div class="pg-sub">All receipts for your child</div>
+        <div class="stats" id="p-fee-stats"></div>
+        <div class="card"><div class="tw"><table><thead><tr><th>Receipt no.</th><th>Fee type</th><th>Month</th><th>Amount</th><th>Mode</th><th>Date</th></tr></thead>
+        <tbody id="p-fee-tbody"></tbody></table></div></div>
+      </div>
+
+      <!-- TIMETABLE -->
+      <div id="pg-timetable" class="dn">
+        <div class="pg-title">Class timetable</div>
+        <div class="pg-sub" id="p-tt-sub"></div>
+        <div class="card"><div class="tw"><table id="p-tt-table"></table></div></div>
+      </div>
+
+    </div>
+    <!-- SETTINGS (outside student container so it's reachable before search) -->
+    <div id="pg-settings" class="dn">
+      <div class="pg-title">Settings</div>
+      <div class="card" style="max-width:420px;">
+        <div class="card-hdr"><span class="card-ttl">Change parent passcode</span></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="fg"><label>New passcode</label><input type="password" id="p-chg-code" placeholder="New passcode"></div>
+            <div class="fg"><label>Confirm</label><input type="password" id="p-chg-code2" placeholder="Confirm passcode"></div>
+          </div>
+          <div class="mt3"><button class="btn btn-pri" onclick="pChangePasscode()">Update passcode</button></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="app.js"></script>
+<script>
+if(!SNS.requireLogin('parent')){}
+const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const PERIODS=['Period 1','Period 2','Period 3','Break','Period 4','Period 5','Period 6'];
+let currentStudent=null;
+
+function cbseGrade(m,max){const p=m/max*100;if(p>=91)return'A1';if(p>=81)return'A2';if(p>=71)return'B1';if(p>=61)return'B2';if(p>=51)return'C1';if(p>=41)return'C2';if(p>=33)return'D';return'E';}
+
+function showPage(id){
+  ['dashboard','attendance','marks','fees','timetable','settings'].forEach(p=>{const el=document.getElementById('pg-'+p);if(el)el.classList.add('dn');});
+  const el=document.getElementById('pg-'+id);if(el)el.classList.remove('dn');
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+  if(!currentStudent&&id!=='settings'){SNS.toast('Enter your child\'s admission number first','info');}
+  if(currentStudent){
+    if(id==='attendance')renderAtt();
+    if(id==='marks')renderMarks();
+    if(id==='fees')renderFees();
+    if(id==='timetable')renderTT();
+  }
+}
+
+function findStudent(){
+  const adm=document.getElementById('p-adm-input').value.trim();
+  const stu=SNS.getStudents().find(s=>s.admissionNo===adm||s.admissionNo===adm.toUpperCase());
+  if(!stu){SNS.toast('Student not found. Please check the admission number.','danger');return;}
+  currentStudent=stu;
+  document.getElementById('p-search-alert').style.display='none';
+  document.getElementById('p-search-bar').style.display='none';
+  document.getElementById('p-student-info').classList.remove('dn');
+  document.getElementById('p-name').textContent=stu.name;
+  document.getElementById('p-class-adm').textContent=SNS.getClassLabel(stu.classId)+' | Adm: '+stu.admissionNo+' | Roll: '+stu.rollNo;
+  document.getElementById('p-today').textContent=SNS.today();
+  renderDash();
+}
+
+function renderDash(){
+  const s=currentStudent;
+  const todayAtt=SNS.getAttendance(SNS.todayKey());
+  let todayStatus='Not marked yet';
+  Object.keys(todayAtt).forEach(cid=>{if(cid===s.classId&&todayAtt[cid].records){todayStatus=todayAtt[cid].records[s.id]==='A'?'❌ Absent today':'✅ Present today';}});
+  document.getElementById('p-today-att').innerHTML=`<span class="badge ${todayStatus.includes('Present')?'ok':todayStatus.includes('Absent')?'err':'gray'}">${todayStatus}</span>`;
+
+  // count attendance this month
+  let presentCount=0,absentCount=0;
+  const now=new Date();const yr=now.getFullYear();const mo=String(now.getMonth()+1).padStart(2,'0');
+  for(let d=1;d<=now.getDate();d++){
+    const dk=`${yr}-${mo}-${String(d).padStart(2,'0')}`;const att=SNS.getAttendance(dk);
+    if(att[s.classId]?.records){const v=att[s.classId].records[s.id];if(v==='P')presentCount++;else if(v==='A')absentCount++;}
+  }
+  const total=presentCount+absentCount;
+  const pct=total>0?Math.round(presentCount/total*100):0;
+
+  // exam count
+  const exams=SNS.getExams().filter(e=>e.classId===s.classId);
+  let markedExams=0;
+  exams.forEach(e=>{const m=SNS.getMarks(e.id,s.classId);if(m[s.id]!==undefined)markedExams++;});
+
+  // fee
+  const feeRecs=SNS.getFeeRecords().filter(r=>r.studentId===s.id);
+  const totalFee=feeRecs.reduce((sum,r)=>sum+Number(r.amount),0);
+
+  document.getElementById('p-stats').innerHTML=`
+    <div class="sc gn"><div class="sc-icon">✅</div><div class="sc-val">${presentCount}</div><div class="sc-lbl">Days present (this month)</div></div>
+    <div class="sc rd"><div class="sc-icon">❌</div><div class="sc-val">${absentCount}</div><div class="sc-lbl">Days absent</div></div>
+    <div class="sc g"><div class="sc-icon">📊</div><div class="sc-val">${pct}%</div><div class="sc-lbl">Attendance %</div></div>
+    <div class="sc bl"><div class="sc-icon">📝</div><div class="sc-val">${markedExams}</div><div class="sc-lbl">Results available</div></div>
+    <div class="sc or"><div class="sc-icon">💰</div><div class="sc-val">${SNS.fmtMoney(totalFee)}</div><div class="sc-lbl">Fee paid this session</div></div>`;
+
+  // recent attendance
+  const attRows=[];const now2=new Date();
+  for(let i=0;i<10;i++){const d=new Date(now2);d.setDate(d.getDate()-i);const dk=d.toISOString().split('T')[0];const att=SNS.getAttendance(dk);
+    if(att[s.classId]?.records){const v=att[s.classId].records[s.id];attRows.push(`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--g100);font-size:13px;"><span>${SNS.fmtDate(dk)}</span><span class="badge ${v==='P'?'ok':'err'}">${v==='P'?'Present':'Absent'}</span></div>`);}}
+  document.getElementById('p-att-recent').innerHTML=attRows.length?attRows.join(''):'<p class="muted">No attendance records yet.</p>';
+
+  // recent marks
+  const markRows=[];
+  exams.slice(-5).forEach(e=>{const m=SNS.getMarks(e.id,s.classId)[s.id];if(m!==undefined){const pct2=Math.round(Number(m)/Number(e.maxMarks)*100);markRows.push(`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--g100);font-size:13px;"><span>${e.name} — ${e.subject}</span><span style="font-weight:600;">${m}/${e.maxMarks} <span class="badge ${Number(m)>=Number(e.passMarks)?'ok':'err'}" style="margin-left:4px;">${cbseGrade(Number(m),Number(e.maxMarks))}</span></span></div>`);
+  }});
+  document.getElementById('p-marks-recent').innerHTML=markRows.length?markRows.join(''):'<p class="muted">No exam results yet.</p>';
+}
+
+function renderAtt(){
+  const s=currentStudent;const rows=[];const now=new Date();
+  for(let i=0;i<90;i++){const d=new Date(now);d.setDate(d.getDate()-i);const dk=d.toISOString().split('T')[0];const att=SNS.getAttendance(dk);
+    if(att[s.classId]?.records){const v=att[s.classId].records[s.id];rows.push(`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--g100);font-size:13px;"><span>${SNS.fmtDate(dk)}</span><span class="badge ${v==='P'?'ok':'err'}">${v==='P'?'Present':'Absent'}</span></div>`);}}
+  document.getElementById('p-att-full').innerHTML=rows.length?rows.join(''):'<p class="muted">No attendance records found.</p>';
+}
+
+function renderMarks(){
+  const s=currentStudent;const exams=SNS.getExams().filter(e=>e.classId===s.classId);
+  const tbody=document.getElementById('p-marks-tbody');
+  if(!tbody)return;
+  const rows=[];
+  exams.forEach(e=>{const m=SNS.getMarks(e.id,s.classId)[s.id];const max=Number(e.maxMarks);const pass=Number(e.passMarks||33);
+    rows.push(`<tr><td>${e.name}</td><td>${e.subject}</td><td>${SNS.fmtDate(e.date)}</td><td>${m!==undefined?m:'—'}</td><td>${max}</td><td>${m!==undefined?Math.round(Number(m)/max*100)+'%':'—'}</td><td>${m!==undefined?cbseGrade(Number(m),max):'—'}</td><td>${m!==undefined?`<span class="badge ${Number(m)>=pass?'ok':'err'}">${Number(m)>=pass?'Pass':'Fail'}</span>`:'<span class="badge gray">Pending</span>'}</td></tr>`);
+  });
+  tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="8" style="text-align:center;color:var(--g500);padding:20px;">No exams found.</td></tr>';
+}
+
+function renderFees(){
+  const s=currentStudent;const recs=SNS.getFeeRecords().filter(r=>r.studentId===s.id);
+  const total=recs.reduce((sum,r)=>sum+Number(r.amount),0);
+  const stats=document.getElementById('p-fee-stats');
+  if(stats)stats.innerHTML=`<div class="sc gn"><div class="sc-icon">💰</div><div class="sc-val">${SNS.fmtMoney(total)}</div><div class="sc-lbl">Total paid this session</div></div><div class="sc bl"><div class="sc-icon">🧾</div><div class="sc-val">${recs.length}</div><div class="sc-lbl">Receipts</div></div>`;
+  const tbody=document.getElementById('p-fee-tbody');if(!tbody)return;
+  tbody.innerHTML=recs.length?recs.slice().reverse().map(r=>`<tr><td style="font-size:11px;">${r.receiptNo}</td><td>${r.feeType}</td><td>${r.month}</td><td style="font-weight:700;color:var(--ok);">${SNS.fmtMoney(r.amount)}</td><td>${r.mode}</td><td>${SNS.fmtDate(r.date)}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--g500);padding:20px;">No fee records found.</td></tr>';
+}
+
+function renderTT(){
+  const s=currentStudent;
+  document.getElementById('p-tt-sub').textContent=SNS.getClassLabel(s.classId)+' weekly schedule';
+  const tt=SNS.getTimetable(s.classId);const table=document.getElementById('p-tt-table');if(!table)return;
+  table.innerHTML=`<thead><tr><th>Period</th>${DAYS.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>
+  ${PERIODS.map(p=>`<tr><td><strong>${p}</strong></td>${DAYS.map(d=>p==='Break'?`<td style="text-align:center;color:var(--g400);font-size:12px;">Break</td>`:`<td>${(tt[d]||{})[p]||'<span style="color:var(--g400)">—</span>'}</td>`).join('')}</tr>`).join('')}</tbody>`;
+}
+
+function pChangePasscode(){
+  const code=document.getElementById('p-chg-code').value;const code2=document.getElementById('p-chg-code2').value;
+  if(!code||code.length<6){SNS.toast('Passcode min 6 characters','danger');return;}
+  if(code!==code2){SNS.toast('Passcodes do not match','danger');return;}
+  SNS.updatePasscode('parent',code);SNS.toast('Parent passcode updated');
+  document.getElementById('p-chg-code').value='';document.getElementById('p-chg-code2').value='';
+}
+
+window.onload=()=>{document.getElementById('p-today').textContent=SNS.today();};
+</script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Teacher Panel — SNS</title>
+<meta name="theme-color" content="#0d2b55">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><circle cx=%2750%27 cy=%2750%27 r=%2748%27 fill=%27%23c9a84c%27/><text x=%2750%27 y=%2768%27 font-size=%2750%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-weight=%27bold%27 fill=%27%23081a38%27>SN</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="logo-circle">SN</div>
+    <div><div class="school-h1">Sadhana Nivriti School</div><div class="school-h2">Chotpur, Noida | Session 2025-26</div></div>
+    <div class="hdr-right">
+      <span class="pbadge teacher">Teacher</span>
+      <button class="btn-logout" onclick="SNS.logout()">Logout</button>
+    </div>
+  </div>
+</header>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sb-lbl">My panel</div>
+    <button class="sb-item active" data-page="dashboard" onclick="showPage('dashboard')"><span class="sb-icon">📊</span>Dashboard</button>
+    <button class="sb-item" data-page="attendance" onclick="showPage('attendance')"><span class="sb-icon">📋</span>Mark attendance</button>
+    <button class="sb-item" data-page="marks" onclick="showPage('marks')"><span class="sb-icon">📝</span>Enter marks</button>
+    <button class="sb-item" data-page="timetable" onclick="showPage('timetable')"><span class="sb-icon">🕐</span>My timetable</button>
+    <button class="sb-item" data-page="students" onclick="showPage('students')"><span class="sb-icon">🎒</span>My students</button>
+    <div class="sb-lbl">Account</div>
+    <button class="sb-item" data-page="settings" onclick="showPage('settings')"><span class="sb-icon">⚙️</span>Settings</button>
+  </nav>
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div id="pg-dashboard">
+      <div class="pg-title">Teacher panel</div>
+      <div class="pg-sub" id="t-today"></div>
+      <div class="alert info">📌 Select your class below to mark today's attendance. Admin can see your marks in real time.</div>
+      <div class="stats" id="t-stats"></div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-ttl">Select your class to mark attendance</span></div>
+        <div class="card-body">
+          <div class="fctr mb3">
+            <div class="fg"><label>Class</label><select id="t-class-sel" onchange="loadTAttendance()" style="padding:8px 12px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;min-width:180px;"></select></div>
+            <span class="muted" id="t-att-status" style="margin-top:18px;"></span>
+          </div>
+          <div id="t-att-list"></div>
+          <div class="mt3 bgrp" id="t-att-btns" style="display:none;">
+            <button class="btn btn-ok" onclick="tMarkAllPresent()">✓ All present</button>
+            <button class="btn btn-gold" onclick="tSaveAttendance()">💾 Save attendance</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div id="pg-attendance" class="dn">
+      <div class="pg-title">Mark attendance</div>
+      <div class="pg-sub">Date-wise attendance entry</div>
+      <div class="fctr mb3">
+        <div class="fg"><label>Class</label><select id="att2-class" onchange="loadTAtt2()" style="padding:8px 12px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;min-width:180px;"></select></div>
+        <div class="fg"><label>Date</label><input type="date" id="att2-date" onchange="loadTAtt2()" style="padding:8px 12px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;"></div>
+      </div>
+      <div class="card"><div class="card-body"><div id="t-att2-list"></div>
+        <div class="mt3 bgrp" id="t-att2-btns" style="display:none;">
+          <button class="btn btn-ok" onclick="tMarkAllPresent2()">✓ All present</button>
+          <button class="btn btn-gold" onclick="tSaveAttendance2()">💾 Save</button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- MARKS -->
+    <div id="pg-marks" class="dn">
+      <div class="pg-title">Enter marks</div>
+      <div class="pg-sub">Enter exam marks for your students</div>
+      <div class="card"><div class="card-body">
+        <div class="form-row mb3">
+          <div class="fg"><label>Exam</label><select id="t-exam-sel" onchange="loadTMarks()" style="width:100%;"><option value="">Select exam</option></select></div>
+          <div class="fg"><label>Class</label><select id="t-marks-class" onchange="loadTMarks()" style="width:100%;"><option value="">Select class</option></select></div>
+        </div>
+        <div id="t-marks-area"></div>
+      </div></div>
+    </div>
+
+    <!-- TIMETABLE -->
+    <div id="pg-timetable" class="dn">
+      <div class="pg-title">My timetable</div>
+      <div class="pg-sub">Weekly class schedule</div>
+      <div class="fctr mb3">
+        <div class="fg"><label>View class timetable</label><select id="tt-view-class" onchange="renderTT()" style="padding:8px 12px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;min-width:180px;"></select></div>
+      </div>
+      <div class="card"><div class="tw"><table id="tt-view-table"></table></div></div>
+    </div>
+
+    <!-- MY STUDENTS -->
+    <div id="pg-students" class="dn">
+      <div class="pg-title">My students</div>
+      <div class="pg-sub">Students in your assigned class</div>
+      <div class="fctr mb3"><div class="fg"><label>Class</label><select id="t-view-class" onchange="renderTStudents()" style="padding:8px 12px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;min-width:180px;"></select></div></div>
+      <div class="card"><div class="tw"><table><thead><tr><th>Roll</th><th>Student name</th><th>Gender</th><th>Contact</th></tr></thead>
+      <tbody id="t-stu-tbody"></tbody></table></div></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="pg-settings" class="dn">
+      <div class="pg-title">Settings</div>
+      <div class="card" style="max-width:420px;">
+        <div class="card-hdr"><span class="card-ttl">Change teacher passcode</span></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="fg"><label>New passcode</label><input type="password" id="t-chg-code" placeholder="New passcode"></div>
+            <div class="fg"><label>Confirm</label><input type="password" id="t-chg-code2" placeholder="Confirm passcode"></div>
+          </div>
+          <div class="mt3"><button class="btn btn-pri" onclick="tChangePasscode()">Update passcode</button></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="app.js"></script>
+<script>
+if(!SNS.requireLogin('teacher')){}
+const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const PERIODS=['Period 1','Period 2','Period 3','Break','Period 4','Period 5','Period 6'];
+
+function init(){
+  document.getElementById('t-today').textContent=SNS.today();
+  populateSels();
+  renderDash();
+  loadTAtt2init();
+}
+
+function populateSels(){
+  const cls=SNS.getClasses();
+  ['t-class-sel','att2-class','t-marks-class','tt-view-class','t-view-class'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.innerHTML='<option value="">Select class</option>'+cls.map(c=>`<option value="${c.id}">${c.name}-${c.section}</option>`).join('');
+  });
+  const exams=SNS.getExams();
+  const es=document.getElementById('t-exam-sel');
+  if(es)es.innerHTML='<option value="">Select exam</option>'+exams.map(e=>`<option value="${e.id}">${e.name} — ${SNS.getClassLabel(e.classId)} (${e.subject})</option>`).join('');
+}
+
+function showPage(id){
+  ['dashboard','attendance','marks','timetable','students','settings'].forEach(p=>document.getElementById('pg-'+p).classList.add('dn'));
+  document.getElementById('pg-'+id).classList.remove('dn');
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+}
+
+function renderDash(){
+  const summary=SNS.getTodaySummary();
+  const stu=SNS.getStudents().filter(s=>s.status==='active');
+  document.getElementById('t-stats').innerHTML=`
+    <div class="sc gn"><div class="sc-icon">✅</div><div class="sc-val">${summary.totalPresent}</div><div class="sc-lbl">Present today</div></div>
+    <div class="sc rd"><div class="sc-icon">❌</div><div class="sc-val">${summary.totalAbsent}</div><div class="sc-lbl">Absent today</div></div>
+    <div class="sc g"><div class="sc-icon">🎒</div><div class="sc-val">${stu.length}</div><div class="sc-lbl">Total students</div></div>
+    <div class="sc or"><div class="sc-icon">⏳</div><div class="sc-val">${summary.unmarkedClasses}</div><div class="sc-lbl">Classes not marked</div></div>`;
+  loadTAttendance();
+}
+
+function loadTAttendance(){
+  const classId=document.getElementById('t-class-sel')?.value;
+  const btns=document.getElementById('t-att-btns');
+  const status=document.getElementById('t-att-status');
+  if(!classId){document.getElementById('t-att-list').innerHTML='';if(btns)btns.style.display='none';return;}
+  const date=SNS.todayKey();const students=SNS.getStudentsByClass(classId);const existing=SNS.getAttendance(date)[classId]?.records||{};
+  if(status)status.textContent=SNS.getAttendance(date)[classId]?'✓ Already marked today':'Not marked yet';
+  if(students.length===0){document.getElementById('t-att-list').innerHTML='<p class="muted">No students in this class.</p>';if(btns)btns.style.display='none';return;}
+  if(btns)btns.style.display='flex';
+  document.getElementById('t-att-list').innerHTML=`<div class="tw"><table><thead><tr><th>Roll</th><th>Name</th><th>Present</th><th>Absent</th></tr></thead><tbody>
+  ${students.map(s=>{const v=existing[s.id]||'P';return`<tr><td>${s.rollNo}</td><td>${s.name}</td><td><input type="radio" name="ta_${s.id}" value="P" ${v==='P'?'checked':''}> P</td><td><input type="radio" name="ta_${s.id}" value="A" ${v==='A'?'checked':''}> A</td></tr>`;}).join('')}</tbody></table></div>`;
+}
+function tMarkAllPresent(){const classId=document.getElementById('t-class-sel')?.value;SNS.getStudentsByClass(classId).forEach(s=>{const r=document.querySelector(`input[name="ta_${s.id}"][value="P"]`);if(r)r.checked=true;});}
+function tSaveAttendance(){
+  const classId=document.getElementById('t-class-sel')?.value;if(!classId)return;
+  const students=SNS.getStudentsByClass(classId);const records={};
+  students.forEach(s=>{const r=document.querySelector(`input[name="ta_${s.id}"]:checked`);records[s.id]=r?r.value:'P';});
+  SNS.markAttendance(SNS.todayKey(),classId,records);SNS.toast('Attendance saved for '+SNS.getClassLabel(classId));
+  document.getElementById('t-att-status').textContent='✓ Marked — '+new Date().toLocaleTimeString();
+}
+
+function loadTAtt2init(){document.getElementById('att2-date').value=SNS.todayKey();}
+function loadTAtt2(){
+  const classId=document.getElementById('att2-class')?.value;const date=document.getElementById('att2-date')?.value;
+  const btns=document.getElementById('t-att2-btns');const area=document.getElementById('t-att2-list');
+  if(!classId||!date){if(area)area.innerHTML='';if(btns)btns.style.display='none';return;}
+  const students=SNS.getStudentsByClass(classId);const existing=SNS.getAttendance(date)[classId]?.records||{};
+  if(students.length===0){area.innerHTML='<p class="muted">No students in this class.</p>';btns.style.display='none';return;}
+  btns.style.display='flex';
+  area.innerHTML=`<div class="tw"><table><thead><tr><th>Roll</th><th>Name</th><th>Present</th><th>Absent</th></tr></thead><tbody>
+  ${students.map(s=>{const v=existing[s.id]||'P';return`<tr><td>${s.rollNo}</td><td>${s.name}</td><td><input type="radio" name="ta2_${s.id}" value="P" ${v==='P'?'checked':''}> P</td><td><input type="radio" name="ta2_${s.id}" value="A" ${v==='A'?'checked':''}> A</td></tr>`;}).join('')}</tbody></table></div>`;
+}
+function tMarkAllPresent2(){const classId=document.getElementById('att2-class')?.value;SNS.getStudentsByClass(classId).forEach(s=>{const r=document.querySelector(`input[name="ta2_${s.id}"][value="P"]`);if(r)r.checked=true;});}
+function tSaveAttendance2(){
+  const classId=document.getElementById('att2-class')?.value;const date=document.getElementById('att2-date')?.value;
+  if(!classId||!date)return;
+  const students=SNS.getStudentsByClass(classId);const records={};
+  students.forEach(s=>{const r=document.querySelector(`input[name="ta2_${s.id}"]:checked`);records[s.id]=r?r.value:'P';});
+  SNS.markAttendance(date,classId,records);SNS.toast('Attendance saved');
+}
+
+function loadTMarks(){
+  const examId=document.getElementById('t-exam-sel')?.value;const classId=document.getElementById('t-marks-class')?.value;
+  const area=document.getElementById('t-marks-area');if(!area)return;
+  if(!examId||!classId){area.innerHTML='';return;}
+  const exam=SNS.getExams().find(e=>e.id===examId);const students=SNS.getStudentsByClass(classId);const existing=SNS.getMarks(examId,classId);
+  if(students.length===0){area.innerHTML='<p class="muted">No students in this class.</p>';return;}
+  area.innerHTML=`<p class="muted mb3">${exam?.name} | ${exam?.subject} | Max marks: ${exam?.maxMarks}</p>
+  <div class="tw"><table><thead><tr><th>Roll</th><th>Name</th><th>Marks (/${exam?.maxMarks})</th></tr></thead><tbody>
+  ${students.map(s=>{const m=existing[s.id]||'';return`<tr><td>${s.rollNo}</td><td>${s.name}</td><td><input type="number" id="tm_${s.id}" value="${m}" min="0" max="${exam?.maxMarks}" style="width:80px;padding:5px 8px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;"></td></tr>`;}).join('')}
+  </tbody></table></div>
+  <div class="mt3"><button class="btn btn-gold" onclick="tSaveMarks('${examId}','${classId}','${exam?.maxMarks}')">💾 Save marks</button></div>`;
+}
+function tSaveMarks(examId,classId,max){
+  const students=SNS.getStudentsByClass(classId);const marks={};
+  students.forEach(s=>{const v=document.getElementById('tm_'+s.id)?.value;if(v!==undefined&&v!=='')marks[s.id]=v;});
+  SNS.saveMarks(examId,classId,marks);SNS.toast('Marks saved');
+}
+
+function renderTT(){
+  const classId=document.getElementById('tt-view-class')?.value;if(!classId)return;
+  const tt=SNS.getTimetable(classId);const table=document.getElementById('tt-view-table');if(!table)return;
+  table.innerHTML=`<thead><tr><th>Period</th>${DAYS.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>
+  ${PERIODS.map(p=>`<tr><td><strong>${p}</strong></td>${DAYS.map(d=>p==='Break'?`<td style="text-align:center;color:var(--g400);font-size:12px;">Break</td>`:`<td>${(tt[d]||{})[p]||'<span style="color:var(--g400)">—</span>'}</td>`).join('')}</tr>`).join('')}</tbody>`;
+}
+
+function renderTStudents(){
+  const classId=document.getElementById('t-view-class')?.value;const tbody=document.getElementById('t-stu-tbody');if(!tbody)return;
+  if(!classId){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--g500);">Select a class</td></tr>';return;}
+  const students=SNS.getStudentsByClass(classId);
+  if(students.length===0){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--g500);">No students found.</td></tr>';return;}
+  tbody.innerHTML=students.map(s=>`<tr><td>${s.rollNo}</td><td><strong>${s.name}</strong></td><td>${s.gender||'—'}</td><td>${s.contact||'—'}</td></tr>`).join('');
+}
+
+function tChangePasscode(){
+  const code=document.getElementById('t-chg-code').value;const code2=document.getElementById('t-chg-code2').value;
+  if(!code||code.length<6){SNS.toast('Passcode min 6 characters','danger');return;}
+  if(code!==code2){SNS.toast('Passcodes do not match','danger');return;}
+  SNS.updatePasscode('teacher',code);SNS.toast('Teacher passcode updated');
+  document.getElementById('t-chg-code').value='';document.getElementById('t-chg-code2').value='';
+}
+
+window.onload=init;
+</script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sadhana Nivriti School — Login</title>
+<meta name="theme-color" content="#0d2b55">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><circle cx=%2750%27 cy=%2750%27 r=%2748%27 fill=%27%23c9a84c%27/><text x=%2750%27 y=%2768%27 font-size=%2750%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-weight=%27bold%27 fill=%27%23081a38%27>SN</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="login-pg">
+  <div class="login-box">
+    <div class="login-logo">SN</div>
+    <div class="login-name">Sadhana Nivriti School</div>
+    <div class="login-loc">Chotpur, Noida &nbsp;|&nbsp; Session 2025-26</div>
+
+    <div class="panel-btns">
+      <button class="pbtn active" onclick="selectPanel('admin',this)">
+        <div class="pi">🏫</div><div class="pl">Admin</div>
+      </button>
+      <button class="pbtn" onclick="selectPanel('teacher',this)">
+        <div class="pi">👩‍🏫</div><div class="pl">Teacher</div>
+      </button>
+      <button class="pbtn" onclick="selectPanel('parent',this)">
+        <div class="pi">👨‍👧</div><div class="pl">Parent</div>
+      </button>
+    </div>
+
+    <div class="login-card">
+      <div class="fg">
+        <label id="pc-label">Admin passcode</label>
+        <input type="password" id="passcode" placeholder="Enter passcode" onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="lerr" id="lerr">Incorrect passcode. Please try again.</div>
+      </div>
+      <button class="btn btn-login" onclick="doLogin()">Sign in →</button>
+    </div>
+
+    <p style="text-align:center;color:rgba(255,255,255,.3);font-size:11px;margin-top:20px;">
+      Sadhana Nivriti School Management System v1.0
+    </p>
+  </div>
+</div>
+<script src="app.js"></script>
+<script>
+let selectedPanel = 'admin';
+function selectPanel(p, el) {
+  selectedPanel = p;
+  document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const labels = {admin:'Admin passcode', teacher:'Teacher passcode', parent:'Parent passcode'};
+  document.getElementById('pc-label').textContent = labels[p];
+  document.getElementById('passcode').value = '';
+  document.getElementById('lerr').classList.remove('show');
+}
+function doLogin() {
+  const code = document.getElementById('passcode').value.trim();
+  const err = document.getElementById('lerr');
+  if (!code) { err.textContent = 'Please enter your passcode.'; err.classList.add('show'); return; }
+  if (SNS.checkPasscode(selectedPanel, code)) {
+    SNS.setSession(selectedPanel);
+    const dest = {admin:'admin.html', teacher:'teacher.html', parent:'parent.html'};
+    window.location.href = dest[selectedPanel];
+  } else {
+    err.textContent = 'Incorrect passcode. Please try again.';
+    err.classList.add('show');
+    document.getElementById('passcode').value = '';
+  }
+}
+</script>
+</body>
+</html>

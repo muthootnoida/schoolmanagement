@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Panel — SNS</title>
+<meta name="theme-color" content="#0d2b55">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><circle cx=%2750%27 cy=%2750%27 r=%2748%27 fill=%27%23c9a84c%27/><text x=%2750%27 y=%2768%27 font-size=%2750%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-weight=%27bold%27 fill=%27%23081a38%27>SN</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="logo-circle">SN</div>
+    <div><div class="school-h1">Sadhana Nivriti School</div><div class="school-h2">Chotpur, Noida &nbsp;|&nbsp; Session 2025-26</div></div>
+    <div class="hdr-right">
+      <span class="pbadge admin">Admin</span>
+      <button class="btn-logout" onclick="SNS.logout()">Logout</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sb-lbl">Overview</div>
+    <button class="sb-item active" data-page="dashboard" onclick="showPage('dashboard')"><span class="sb-icon">📊</span>Dashboard</button>
+    <div class="sb-lbl">Academics</div>
+    <button class="sb-item" data-page="students" onclick="showPage('students')"><span class="sb-icon">🎒</span>Students</button>
+    <button class="sb-item" data-page="attendance" onclick="showPage('attendance')"><span class="sb-icon">📋</span>Attendance</button>
+    <button class="sb-item" data-page="exams" onclick="showPage('exams')"><span class="sb-icon">📝</span>Exams & Marks</button>
+    <button class="sb-item" data-page="timetable" onclick="showPage('timetable')"><span class="sb-icon">🕐</span>Timetable</button>
+    <div class="sb-lbl">Finance</div>
+    <button class="sb-item" data-page="fees" onclick="showPage('fees')"><span class="sb-icon">💰</span>Fee Collection</button>
+    <div class="sb-lbl">Setup</div>
+    <button class="sb-item" data-page="classes" onclick="showPage('classes')"><span class="sb-icon">🏫</span>Classes & Subjects</button>
+    <button class="sb-item" data-page="teachers" onclick="showPage('teachers')"><span class="sb-icon">👩‍🏫</span>Teachers</button>
+    <button class="sb-item" data-page="enquiries" onclick="showPage('enquiries')"><span class="sb-icon">📩</span>Enquiries</button>
+    <button class="sb-item" data-page="settings" onclick="showPage('settings')"><span class="sb-icon">⚙️</span>Settings</button>
+  </nav>
+
+  <main class="main">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div id="pg-dashboard">
+      <div class="pg-title">Good morning, Principal 👋</div>
+      <div class="pg-sub" id="today-date"></div>
+
+      <!-- Live Stats Row -->
+      <div class="stats" id="dash-stats"></div>
+
+      <!-- Quick Actions -->
+      <div class="card mb4">
+        <div class="card-hdr"><span class="card-ttl">Quick actions</span></div>
+        <div class="card-body">
+          <div class="qa-grid">
+            <div class="qa" onclick="showPage('attendance')"><div class="qa-icon">📋</div><div class="qa-lbl">View attendance</div><div class="qa-sub">Today's status</div></div>
+            <div class="qa" onclick="showPage('fees')"><div class="qa-icon">💰</div><div class="qa-lbl">Collect fee</div><div class="qa-sub">Add payment</div></div>
+            <div class="qa" onclick="openAddStudent()"><div class="qa-icon">🎒</div><div class="qa-lbl">Admit student</div><div class="qa-sub">New admission</div></div>
+            <div class="qa" onclick="showPage('exams')"><div class="qa-icon">📝</div><div class="qa-lbl">Schedule exam</div><div class="qa-sub">Create exam</div></div>
+            <div class="qa" onclick="showPage('enquiries')"><div class="qa-icon">📩</div><div class="qa-lbl">New enquiry</div><div class="qa-sub">Walk-in / call</div></div>
+            <div class="qa" onclick="exportReport()"><div class="qa-icon">📥</div><div class="qa-lbl">Export report</div><div class="qa-sub">Download CSV</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Class-wise Attendance Grid -->
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-ttl">📋 Today's class attendance</span>
+          <span class="muted" id="att-time">Live — updates as teachers mark</span>
+        </div>
+        <div class="card-body">
+          <div class="att-grid" id="dash-att-grid"></div>
+        </div>
+      </div>
+
+      <!-- Teacher presence & Fee snapshot side by side -->
+      <div class="grid2">
+        <div class="card">
+          <div class="card-hdr"><span class="card-ttl">👩‍🏫 Teacher status today</span></div>
+          <div class="card-body" id="dash-teachers"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-ttl">💰 Fee snapshot</span></div>
+          <div class="card-body" id="dash-fee"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ STUDENTS ══ -->
+    <div id="pg-students" class="dn">
+      <div class="pg-title">Students</div>
+      <div class="pg-sub">All enrolled students — Session 2025-26</div>
+      <div class="fbet mb3">
+        <div class="fctr">
+          <select id="stu-class-filter" onchange="renderStudents()" style="padding:7px 11px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;">
+            <option value="">All classes</option>
+          </select>
+          <input type="text" id="stu-search" oninput="renderStudents()" placeholder="Search by name / roll..." style="padding:7px 11px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;width:200px;">
+        </div>
+        <button class="btn btn-gold" onclick="openAddStudent()">+ Admit student</button>
+      </div>
+      <div class="card">
+        <div class="tw"><table><thead><tr><th>Adm. No</th><th>Roll</th><th>Student Name</th><th>Class</th><th>Father's Name</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="stu-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ══ ATTENDANCE ══ -->
+    <div id="pg-attendance" class="dn">
+      <div class="pg-title">Attendance</div>
+      <div class="pg-sub">School-wide attendance tracker</div>
+      <div class="fctr mb3">
+        <input type="date" id="att-date-pick" onchange="renderAttendancePage()" style="padding:7px 11px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;">
+        <span class="muted" id="att-summary-text"></span>
+      </div>
+      <div class="att-grid" id="att-page-grid"></div>
+
+      <!-- Mark attendance for a class (admin override) -->
+      <div class="card mt4">
+        <div class="card-hdr"><span class="card-ttl">Mark / override attendance</span>
+          <select id="att-class-sel" style="padding:6px 10px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;"></select>
+        </div>
+        <div class="card-body">
+          <div id="att-student-list"></div>
+          <div class="mt3 bgrp">
+            <button class="btn btn-ok" onclick="markAllPresent()">✓ Mark all present</button>
+            <button class="btn btn-gold" onclick="saveAttendance()">Save attendance</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ EXAMS ══ -->
+    <div id="pg-exams" class="dn">
+      <div class="pg-title">Exams & Marks</div>
+      <div class="pg-sub">CBSE exam schedule and mark entry</div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('exams','ex-list',this)">Exam schedule</button>
+        <button class="tab" onclick="switchTab('exams','ex-marks',this)">Enter marks</button>
+        <button class="tab" onclick="switchTab('exams','ex-results',this)">Results</button>
+      </div>
+      <div id="ex-list">
+        <div class="fbet mb3">
+          <span class="muted" id="exam-count-lbl"></span>
+          <button class="btn btn-gold" onclick="SNS.openModal('modal-exam')">+ Schedule exam</button>
+        </div>
+        <div class="card"><div class="tw"><table><thead><tr><th>Exam name</th><th>Class</th><th>Subject</th><th>Date</th><th>Max marks</th><th>Status</th></tr></thead>
+        <tbody id="exam-tbody"></tbody></table></div></div>
+      </div>
+      <div id="ex-marks" class="dn">
+        <div class="card"><div class="card-hdr"><span class="card-ttl">Select exam & class to enter marks</span></div>
+        <div class="card-body">
+          <div class="form-row mb3">
+            <div class="fg"><label>Exam</label><select id="marks-exam-sel" onchange="loadMarksEntry()"><option value="">Select exam</option></select></div>
+            <div class="fg"><label>Class</label><select id="marks-class-sel" onchange="loadMarksEntry()"><option value="">Select class</option></select></div>
+          </div>
+          <div id="marks-entry-area"></div>
+        </div></div>
+      </div>
+      <div id="ex-results" class="dn">
+        <div class="card"><div class="card-hdr"><span class="card-ttl">Result summary</span></div>
+        <div class="card-body">
+          <div class="form-row mb3">
+            <div class="fg"><label>Exam</label><select id="res-exam-sel" onchange="loadResults()"><option value="">Select exam</option></select></div>
+            <div class="fg"><label>Class</label><select id="res-class-sel" onchange="loadResults()"><option value="">Select class</option></select></div>
+          </div>
+          <div id="results-area"></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ══ TIMETABLE ══ -->
+    <div id="pg-timetable" class="dn">
+      <div class="pg-title">Timetable</div>
+      <div class="pg-sub">Class-wise weekly schedule</div>
+      <div class="fctr mb3">
+        <div class="fg"><label>Select class</label>
+          <select id="tt-class-sel" onchange="renderTimetable()" style="padding:7px 11px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;min-width:160px;"></select>
+        </div>
+        <button class="btn btn-gold" style="margin-top:18px;" onclick="saveTimetable()">💾 Save timetable</button>
+      </div>
+      <div class="card"><div class="tw"><table id="tt-table"></table></div></div>
+    </div>
+
+    <!-- ══ FEES ══ -->
+    <div id="pg-fees" class="dn">
+      <div class="pg-title">Fee Collection</div>
+      <div class="pg-sub">Collect and track student fees</div>
+      <div class="stats" id="fee-stats"></div>
+      <div class="grid2">
+        <!-- Collect Fee Form -->
+        <div class="card">
+          <div class="card-hdr"><span class="card-ttl">Collect fee</span></div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="fg"><label>Student</label>
+                <select id="fee-stu-sel" style="width:100%;"><option value="">Select student</option></select>
+              </div>
+              <div class="fg"><label>Fee type</label>
+                <select id="fee-type">
+                  <option>Tuition Fee</option><option>Annual Charges</option><option>Exam Fee</option>
+                  <option>Sports Fee</option><option>Lab Fee</option><option>Other</option>
+                </select>
+              </div>
+              <div class="fg"><label>Month / Period</label>
+                <select id="fee-month">
+                  <option>April 2025</option><option>May 2025</option><option>June 2025</option>
+                  <option>July 2025</option><option>August 2025</option><option>September 2025</option>
+                  <option>October 2025</option><option>November 2025</option><option>December 2025</option>
+                  <option>January 2026</option><option>February 2026</option><option>March 2026</option>
+                </select>
+              </div>
+              <div class="fg"><label>Amount (₹)</label><input type="number" id="fee-amount" placeholder="0" min="0"></div>
+              <div class="fg"><label>Payment mode</label>
+                <select id="fee-mode"><option>Cash</option><option>UPI</option><option>Cheque</option><option>Online</option></select>
+              </div>
+              <div class="fg"><label>Date</label><input type="date" id="fee-date"></div>
+            </div>
+            <div class="fg mt3"><label>Remarks (optional)</label><input type="text" id="fee-remarks" placeholder="Any note..."></div>
+            <div class="mt3"><button class="btn btn-gold" onclick="collectFee()">🧾 Collect & print receipt</button></div>
+          </div>
+        </div>
+        <!-- Recent Collections -->
+        <div class="card">
+          <div class="card-hdr"><span class="card-ttl">Recent collections</span></div>
+          <div class="tw"><table><thead><tr><th>Receipt</th><th>Student</th><th>Amount</th><th>Type</th><th>Date</th></tr></thead>
+          <tbody id="fee-tbody"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CLASSES ══ -->
+    <div id="pg-classes" class="dn">
+      <div class="pg-title">Classes & Subjects</div>
+      <div class="pg-sub">Manage class sections and subject lists</div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-ttl">Class sections</span><button class="btn btn-gold btn-sm" onclick="SNS.openModal('modal-class')">+ Add section</button></div>
+        <div class="tw"><table><thead><tr><th>Class</th><th>Section</th><th>Class teacher</th><th>Strength</th><th>Subjects</th></tr></thead>
+        <tbody id="class-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ══ TEACHERS ══ -->
+    <div id="pg-teachers" class="dn">
+      <div class="pg-title">Teachers</div>
+      <div class="pg-sub">Teaching staff records</div>
+      <div class="fbet mb3">
+        <span class="muted" id="teacher-count"></span>
+        <button class="btn btn-gold" onclick="SNS.openModal('modal-teacher')">+ Add teacher</button>
+      </div>
+      <div class="card"><div class="tw"><table><thead><tr><th>Name</th><th>Subject</th><th>Class assigned</th><th>Contact</th><th>Qualification</th></tr></thead>
+      <tbody id="teacher-tbody"></tbody></table></div></div>
+    </div>
+
+    <!-- ══ ENQUIRIES ══ -->
+    <div id="pg-enquiries" class="dn">
+      <div class="pg-title">Admissions enquiries</div>
+      <div class="pg-sub">Track walk-in and phone enquiries</div>
+      <div class="fbet mb3">
+        <span class="muted" id="enq-count"></span>
+        <button class="btn btn-gold" onclick="SNS.openModal('modal-enquiry')">+ New enquiry</button>
+      </div>
+      <div class="card"><div class="tw"><table><thead><tr><th>Date</th><th>Name</th><th>Class sought</th><th>Contact</th><th>Source</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="enq-tbody"></tbody></table></div></div>
+    </div>
+
+    <!-- ══ SETTINGS ══ -->
+    <div id="pg-settings" class="dn">
+      <div class="pg-title">Settings</div>
+      <div class="pg-sub">System configuration and passcodes</div>
+      <div class="card" style="max-width:480px;">
+        <div class="card-hdr"><span class="card-ttl">Change passcodes</span></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="fg"><label>Panel</label>
+              <select id="chg-panel"><option value="admin">Admin</option><option value="teacher">Teacher</option><option value="parent">Parent</option></select>
+            </div>
+            <div class="fg"><label>New passcode</label><input type="password" id="chg-code" placeholder="New passcode"></div>
+            <div class="fg"><label>Confirm</label><input type="password" id="chg-code2" placeholder="Confirm passcode"></div>
+          </div>
+          <div class="mt3"><button class="btn btn-pri" onclick="changePasscode()">Update passcode</button></div>
+        </div>
+      </div>
+      <div class="card mt4" style="max-width:480px;">
+        <div class="card-hdr"><span class="card-ttl">Data management</span></div>
+        <div class="card-body">
+          <p class="muted mb3">Data lives only in this device's browser. Export a backup regularly and keep it safe — Import restores it on a new device.</p>
+          <div class="bgrp">
+            <button class="btn btn-pri" onclick="exportData()">📥 Export backup</button>
+            <button class="btn btn-out" onclick="document.getElementById('import-file').click()">📤 Import backup</button>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+            <button class="btn btn-gold" onclick="if(confirm('Load sample students, teachers and records for demo? Existing data will be kept.'))loadDemoData()">✨ Load demo data</button>
+            <button class="btn btn-err" onclick="if(confirm('This will clear ALL data. Are you sure?'))clearData()">🗑 Clear all data</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Add Student -->
+<div class="modal-overlay" id="modal-student">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-ttl">Admit new student</span><button class="modal-x" onclick="SNS.closeModal('modal-student')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg"><label>Student full name *</label><input type="text" id="s-name" placeholder="As per birth certificate"></div>
+        <div class="fg"><label>Date of birth *</label><input type="date" id="s-dob"></div>
+        <div class="fg"><label>Gender *</label><select id="s-gender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+        <div class="fg"><label>Class *</label><select id="s-class"><option value="">Select class</option></select></div>
+        <div class="fg"><label>Father's name *</label><input type="text" id="s-father" placeholder="Father's full name"></div>
+        <div class="fg"><label>Mother's name</label><input type="text" id="s-mother" placeholder="Mother's full name"></div>
+        <div class="fg"><label>Contact number *</label><input type="tel" id="s-contact" placeholder="10-digit mobile"></div>
+        <div class="fg"><label>Aadhaar no. (optional)</label><input type="text" id="s-aadhaar" placeholder="12-digit Aadhaar"></div>
+        <div class="fg"><label>Previous school</label><input type="text" id="s-prevsch" placeholder="School name or 'New admission'"></div>
+        <div class="fg"><label>Address</label><input type="text" id="s-address" placeholder="Residential address"></div>
+      </div>
+    </div>
+    <div class="modal-ftr"><button class="btn btn-out" onclick="SNS.closeModal('modal-student')">Cancel</button><button class="btn btn-gold" onclick="admitStudent()">Admit student</button></div>
+  </div>
+</div>
+
+<!-- Add Teacher -->
+<div class="modal-overlay" id="modal-teacher">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-ttl">Add teacher</span><button class="modal-x" onclick="SNS.closeModal('modal-teacher')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg"><label>Full name *</label><input type="text" id="t-name" placeholder="Teacher name"></div>
+        <div class="fg"><label>Subject *</label><input type="text" id="t-subject" placeholder="e.g. Mathematics, Hindi"></div>
+        <div class="fg"><label>Class assigned</label><select id="t-class"><option value="">None / multiple</option></select></div>
+        <div class="fg"><label>Contact *</label><input type="tel" id="t-contact" placeholder="Mobile number"></div>
+        <div class="fg"><label>Qualification</label><input type="text" id="t-qual" placeholder="e.g. B.Ed, M.A."></div>
+        <div class="fg"><label>Joining date</label><input type="date" id="t-join"></div>
+      </div>
+    </div>
+    <div class="modal-ftr"><button class="btn btn-out" onclick="SNS.closeModal('modal-teacher')">Cancel</button><button class="btn btn-gold" onclick="addTeacher()">Add teacher</button></div>
+  </div>
+</div>
+
+<!-- Add Exam -->
+<div class="modal-overlay" id="modal-exam">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-ttl">Schedule exam</span><button class="modal-x" onclick="SNS.closeModal('modal-exam')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg"><label>Exam name *</label><select id="ex-name"><option>Unit Test 1</option><option>Unit Test 2</option><option>Half-Yearly</option><option>Annual</option><option>Practice Test</option></select></div>
+        <div class="fg"><label>Class *</label><select id="ex-class"><option value="">Select class</option></select></div>
+        <div class="fg"><label>Subject *</label><select id="ex-subject"><option value="">Select subject</option></select></div>
+        <div class="fg"><label>Exam date *</label><input type="date" id="ex-date"></div>
+        <div class="fg"><label>Max marks *</label><input type="number" id="ex-max" value="100" min="1"></div>
+        <div class="fg"><label>Pass marks</label><input type="number" id="ex-pass" value="33" min="1"></div>
+      </div>
+    </div>
+    <div class="modal-ftr"><button class="btn btn-out" onclick="SNS.closeModal('modal-exam')">Cancel</button><button class="btn btn-gold" onclick="scheduleExam()">Schedule</button></div>
+  </div>
+</div>
+
+<!-- Add Enquiry -->
+<div class="modal-overlay" id="modal-enquiry">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-ttl">New admission enquiry</span><button class="modal-x" onclick="SNS.closeModal('modal-enquiry')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg"><label>Child's name *</label><input type="text" id="enq-name" placeholder="Student name"></div>
+        <div class="fg"><label>Class seeking *</label><select id="enq-class"><option value="">Select class</option></select></div>
+        <div class="fg"><label>Parent name *</label><input type="text" id="enq-parent" placeholder="Father / Mother name"></div>
+        <div class="fg"><label>Contact *</label><input type="tel" id="enq-contact" placeholder="Mobile number"></div>
+        <div class="fg"><label>Source</label><select id="enq-source"><option>Walk-in</option><option>Phone call</option><option>Reference</option><option>Online</option></select></div>
+        <div class="fg"><label>Remarks</label><input type="text" id="enq-remarks" placeholder="Any notes..."></div>
+      </div>
+    </div>
+    <div class="modal-ftr"><button class="btn btn-out" onclick="SNS.closeModal('modal-enquiry')">Cancel</button><button class="btn btn-gold" onclick="addEnquiry()">Save enquiry</button></div>
+  </div>
+</div>
+
+<!-- Add Class Section -->
+<div class="modal-overlay" id="modal-class">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-ttl">Add class section</span><button class="modal-x" onclick="SNS.closeModal('modal-class')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="fg"><label>Class *</label><select id="cls-num"><option>Class 1</option><option>Class 2</option><option>Class 3</option><option>Class 4</option><option>Class 5</option><option>Class 6</option><option>Class 7</option><option>Class 8</option><option>Class 9</option><option>Class 10</option></select></div>
+        <div class="fg"><label>Section *</label><input type="text" id="cls-sec" placeholder="A, B, C..." maxlength="2"></div>
+        <div class="fg"><label>Class teacher</label><select id="cls-teacher"><option value="">Assign later</option></select></div>
+      </div>
+    </div>
+    <div class="modal-ftr"><button class="btn btn-out" onclick="SNS.closeModal('modal-class')">Cancel</button><button class="btn btn-gold" onclick="addClass()">Add section</button></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+// ── INIT ──
+if (!SNS.requireLogin('admin')) {}
+
+function init() {
+  document.getElementById('today-date').textContent = SNS.today();
+  document.getElementById('fee-date').value = SNS.todayKey();
+  document.getElementById('att-date-pick').value = SNS.todayKey();
+  populateClassDropdowns();
+  renderDashboard();
+  renderStudents();
+  renderTeachers();
+  renderExams();
+  renderFees();
+  renderClasses();
+  renderEnquiries();
+  renderAttendancePage();
+  populateTimetableClass();
+  setInterval(renderDashboard, 30000); // auto-refresh dashboard every 30s
+}
+
+// ── PAGE NAVIGATION ──
+const pages = ['dashboard','students','attendance','exams','timetable','fees','classes','teachers','enquiries','settings'];
+function showPage(id) {
+  pages.forEach(p => document.getElementById('pg-'+p).classList.add('dn'));
+  document.getElementById('pg-'+id).classList.remove('dn');
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.toggle('active', b.dataset.page===id));
+}
+const EXAM_TABS = ['ex-list','ex-marks','ex-results'];
+function switchTab(section, tabId, btn) {
+  const parent = document.getElementById('pg-'+section);
+  EXAM_TABS.forEach(t => document.getElementById(t)?.classList.add('dn'));
+  document.getElementById(tabId).classList.remove('dn');
+  parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  if(tabId==='ex-marks') populateMarksSelects();
+  if(tabId==='ex-results') populateResultsSelects();
+}
+
+// ── POPULATE DROPDOWNS ──
+function populateClassDropdowns() {
+  const cls = SNS.getClasses();
+  const teachers = SNS.getTeachers();
+  ['s-class','t-class','ex-class','tt-class-sel','att-class-sel','cls-teacher','res-class-sel'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    if(id==='cls-teacher'){ el.innerHTML='<option value="">Assign later</option>'+teachers.map(t=>`<option value="${t.id}">${t.name}</option>`).join(''); return; }
+    el.innerHTML = (id==='t-class'?'<option value="">None / multiple</option>':'<option value="">Select class</option>') + cls.map(c=>`<option value="${c.id}">${c.name}-${c.section}</option>`).join('');
+  });
+  // enquiry class
+  const enqCls = document.getElementById('enq-class');
+  if(enqCls) enqCls.innerHTML='<option value="">Select class</option>'+['1','2','3','4','5','6','7','8','9','10'].map(n=>`<option value="Class ${n}">Class ${n}</option>`).join('');
+  // filter
+  const filter = document.getElementById('stu-class-filter');
+  if(filter) filter.innerHTML='<option value="">All classes</option>'+cls.map(c=>`<option value="${c.id}">${c.name}-${c.section}</option>`).join('');
+  // fee student
+  populateFeeStudents();
+  // exam subject (updates on class change)
+  const exCls = document.getElementById('ex-class');
+  if(exCls) exCls.onchange = function(){ loadExamSubjects(this.value); };
+}
+
+function loadExamSubjects(classId) {
+  const subs = SNS.getSubjects(classId);
+  const sel = document.getElementById('ex-subject');
+  sel.innerHTML = '<option value="">Select subject</option>' + subs.map(s=>`<option>${s}</option>`).join('');
+}
+
+function populateFeeStudents() {
+  const sel = document.getElementById('fee-stu-sel');
+  if(!sel) return;
+  const students = SNS.getStudents().filter(s=>s.status==='active');
+  sel.innerHTML = '<option value="">Select student</option>' + students.map(s=>`<option value="${s.id}">${s.name} — ${SNS.getClassLabel(s.classId)} (${s.admissionNo})</option>`).join('');
+}
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  const summary = SNS.getTodaySummary();
+  const students = SNS.getStudents().filter(s=>s.status==='active');
+  const teachers = SNS.getTeachers();
+  const feeSummary = SNS.getFeeSummary();
+  const enquiries = SNS.getEnquiries().filter(e=>e.status==='pending');
+
+  // Stats
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="sc g"><div class="sc-icon">🎒</div><div class="sc-val">${students.length}</div><div class="sc-lbl">Active students</div></div>
+    <div class="sc gn"><div class="sc-icon">✅</div><div class="sc-val">${summary.totalPresent}</div><div class="sc-lbl">Present today</div><div class="sc-sub">of ${summary.totalStrength} enrolled</div></div>
+    <div class="sc rd"><div class="sc-icon">❌</div><div class="sc-val">${summary.totalAbsent}</div><div class="sc-lbl">Absent today</div></div>
+    <div class="sc or"><div class="sc-icon">⏳</div><div class="sc-val">${summary.unmarkedClasses}</div><div class="sc-lbl">Classes not marked</div><div class="sc-sub">of ${SNS.getClasses().length} total</div></div>
+    <div class="sc bl"><div class="sc-icon">💰</div><div class="sc-val">${SNS.fmtMoney(feeSummary.todayAmt)}</div><div class="sc-lbl">Fee collected today</div></div>
+    <div class="sc g"><div class="sc-icon">👩‍🏫</div><div class="sc-val">${teachers.length}</div><div class="sc-lbl">Teachers</div></div>
+    <div class="sc or"><div class="sc-icon">📩</div><div class="sc-val">${enquiries.length}</div><div class="sc-lbl">Pending enquiries</div></div>
+  `;
+
+  // Attendance grid
+  document.getElementById('dash-att-grid').innerHTML = summary.classWise.map(c => {
+    const fill = c.pct>=75?'':(c.pct>=50?'w':'d');
+    return `<div class="cls-card">
+      <div style="display:flex;justify-content:space-between;align-items:start;">
+        <div><div class="cls-name">${c.name}-${c.section}</div><div class="cls-teacher">${c.classTeacherId?SNS.getTeacherName(c.classTeacherId):'No teacher assigned'}</div></div>
+        <span class="badge ${c.marked?'ok':'gray'}">${c.marked?'Marked':'Not marked'}</span>
+      </div>
+      <div class="att-bar"><div class="att-fill ${fill}" style="width:${c.pct}%"></div></div>
+      <div class="cls-row"><span>Strength: <strong>${c.strength}</strong></span><span>Present: <strong style="color:var(--ok)">${c.present}</strong></span><span>Absent: <strong style="color:var(--err)">${c.absent}</strong></span><span><strong>${c.pct}%</strong></span></div>
+    </div>`;
+  }).join('');
+
+  // Teacher panel
+  const attToday = SNS.getAttendance(SNS.todayKey());
+  document.getElementById('dash-teachers').innerHTML = teachers.length === 0 ?
+    '<p class="muted">No teachers added yet.</p>' :
+    teachers.map(t => {
+      const cls = SNS.getClasses().find(c=>c.classTeacherId===t.id);
+      const hasMarked = cls && attToday[cls.id];
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--g100);">
+        <div><span class="dot ${hasMarked?'ok':cls?'err':'nd'}"></span><strong style="font-size:13px;">${t.name}</strong><div style="font-size:11px;color:var(--g500);margin-left:13px;">${t.subject}${cls?' · '+cls.name+'-'+cls.section:''}</div></div>
+        <span class="badge ${hasMarked?'ok':cls?'warn':'gray'}">${hasMarked?'Marked':cls?'Not yet':'No class'}</span>
+      </div>`;
+    }).join('');
+
+  // Fee panel
+  const feeRecs = SNS.getFeeRecords().slice(-5).reverse();
+  document.getElementById('dash-fee').innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+      <div><div style="font-size:11px;color:var(--g600);">Collected today</div><div style="font-size:20px;font-weight:700;color:var(--ok);">${SNS.fmtMoney(feeSummary.todayAmt)}</div></div>
+      <div style="text-align:right;"><div style="font-size:11px;color:var(--g600);">Total this session</div><div style="font-size:20px;font-weight:700;color:var(--navy);">${SNS.fmtMoney(feeSummary.total)}</div></div>
+    </div>
+    ${feeRecs.length===0?'<p class="muted">No collections yet today.</p>':feeRecs.map(r=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--g100);font-size:12px;"><span>${r.studentName}</span><span style="font-weight:600;color:var(--ok);">${SNS.fmtMoney(r.amount)}</span></div>`).join('')}
+  `;
+}
+
+// ── STUDENTS ──
+function renderStudents() {
+  const filter = document.getElementById('stu-class-filter')?.value;
+  const search = document.getElementById('stu-search')?.value?.toLowerCase();
+  let students = SNS.getStudents();
+  if(filter) students = students.filter(s=>s.classId===filter);
+  if(search) students = students.filter(s=>s.name?.toLowerCase().includes(search)||s.rollNo?.includes(search)||s.admissionNo?.toLowerCase().includes(search));
+  const tbody = document.getElementById('stu-tbody');
+  if(!tbody) return;
+  if(students.length===0){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--g500);padding:24px;">No students found. Click "Admit student" to add.</td></tr>';return;}
+  tbody.innerHTML = students.map(s=>`
+    <tr>
+      <td>${s.admissionNo}</td>
+      <td>${s.rollNo}</td>
+      <td><strong>${s.name}</strong></td>
+      <td>${SNS.getClassLabel(s.classId)}</td>
+      <td>${s.fatherName||'—'}</td>
+      <td>${s.contact||'—'}</td>
+      <td><span class="badge ${s.status==='active'?'ok':'gray'}">${s.status}</span></td>
+      <td><button class="btn btn-sm btn-out" onclick="tcStudent('${s.id}')">TC</button></td>
+    </tr>`).join('');
+}
+
+function openAddStudent(){ SNS.openModal('modal-student'); }
+function admitStudent() {
+  const name=document.getElementById('s-name').value.trim();
+  const classId=document.getElementById('s-class').value;
+  if(!name||!classId){SNS.toast('Name and class are required.','danger');return;}
+  const s = SNS.addStudent({
+    name, classId, dob:document.getElementById('s-dob').value,
+    gender:document.getElementById('s-gender').value,
+    fatherName:document.getElementById('s-father').value,
+    motherName:document.getElementById('s-mother').value,
+    contact:document.getElementById('s-contact').value,
+    aadhaar:document.getElementById('s-aadhaar').value,
+    prevSchool:document.getElementById('s-prevsch').value,
+    address:document.getElementById('s-address').value,
+  });
+  SNS.closeModal('modal-student');
+  SNS.toast(`${name} admitted. Admission No: ${s.admissionNo}`);
+  ['s-name','s-dob','s-father','s-mother','s-contact','s-aadhaar','s-prevsch','s-address'].forEach(id=>document.getElementById(id).value='');
+  renderStudents(); populateFeeStudents(); renderDashboard(); renderClasses();
+}
+function tcStudent(id){
+  const s=SNS.getStudents().find(x=>x.id===id);
+  if(!s)return;
+  if(!confirm(`Issue TC to ${s.name}? This will mark them inactive.`))return;
+  const all=SNS.getStudents(); all.find(x=>x.id===id).status='tc-issued';
+  SNS.saveStudents(all); SNS.toast(`TC issued for ${s.name}`,'warning');
+  renderStudents(); renderDashboard();
+}
+
+// ── ATTENDANCE PAGE ──
+function renderAttendancePage() {
+  const date=document.getElementById('att-date-pick')?.value||SNS.todayKey();
+  const att=SNS.getAttendance(date);
+  const cls=SNS.getClasses();
+  const stu=SNS.getStudents().filter(s=>s.status==='active');
+  let present=0,strength=0,marked=0;
+  const grid=document.getElementById('att-page-grid');
+  if(!grid)return;
+  grid.innerHTML=cls.map(c=>{
+    const cs=stu.filter(s=>s.classId===c.id); const str=cs.length; strength+=str;
+    if(att[c.id]){marked++;const rec=att[c.id].records||{};const p=Object.values(rec).filter(v=>v==='P').length;present+=p;
+      const pct=str>0?Math.round(p/str*100):0; const fill=pct>=75?'':(pct>=50?'w':'d');
+      return `<div class="cls-card"><div style="display:flex;justify-content:space-between;align-items:start;"><div><div class="cls-name">${c.name}-${c.section}</div><div class="cls-teacher">${c.classTeacherId?SNS.getTeacherName(c.classTeacherId):'—'}</div></div><span class="badge ok">Marked</span></div><div class="att-bar"><div class="att-fill ${fill}" style="width:${pct}%"></div></div><div class="cls-row"><span>Strength: <strong>${str}</strong></span><span>P: <strong style="color:var(--ok)">${p}</strong></span><span>A: <strong style="color:var(--err)">${str-p}</strong></span><span><strong>${pct}%</strong></span></div></div>`;}
+    return `<div class="cls-card"><div style="display:flex;justify-content:space-between;align-items:start;"><div><div class="cls-name">${c.name}-${c.section}</div><div class="cls-teacher">${c.classTeacherId?SNS.getTeacherName(c.classTeacherId):'—'}</div></div><span class="badge gray">Not marked</span></div><div class="att-bar"><div class="att-fill" style="width:0%"></div></div><div class="cls-row"><span>Strength: <strong>${str}</strong></span><span style="color:var(--g400);">Awaiting teacher</span></div></div>`;
+  }).join('');
+  document.getElementById('att-summary-text').textContent=`${marked} of ${cls.length} classes marked | ${present} present of ${strength} students`;
+  // attendance marking section
+  loadAttMarkingClass();
+}
+
+function loadAttMarkingClass(){
+  const clsSel=document.getElementById('att-class-sel');
+  if(!clsSel)return;
+  const cls=SNS.getClasses();
+  clsSel.innerHTML=cls.map(c=>`<option value="${c.id}">${c.name}-${c.section}</option>`).join('');
+  clsSel.onchange=loadStudentsForMarking;
+  loadStudentsForMarking();
+}
+function loadStudentsForMarking(){
+  const classId=document.getElementById('att-class-sel')?.value;
+  const date=document.getElementById('att-date-pick')?.value||SNS.todayKey();
+  const students=SNS.getStudentsByClass(classId);
+  const existing=SNS.getAttendance(date)[classId]?.records||{};
+  const area=document.getElementById('att-student-list');
+  if(!area)return;
+  if(students.length===0){area.innerHTML='<p class="muted">No students in this class.</p>';return;}
+  area.innerHTML=`<div class="tw"><table><thead><tr><th>Roll</th><th>Student name</th><th>Present</th><th>Absent</th></tr></thead><tbody>
+    ${students.map(s=>{const v=existing[s.id]||'P';return`<tr><td>${s.rollNo}</td><td>${s.name}</td>
+      <td><input type="radio" name="att_${s.id}" value="P" ${v==='P'?'checked':''}> Present</td>
+      <td><input type="radio" name="att_${s.id}" value="A" ${v==='A'?'checked':''}> Absent</td>
+    </tr>`}).join('')}
+  </tbody></table></div>`;
+}
+function markAllPresent(){
+  const classId=document.getElementById('att-class-sel')?.value;
+  SNS.getStudentsByClass(classId).forEach(s=>{const r=document.querySelector(`input[name="att_${s.id}"][value="P"]`);if(r)r.checked=true;});
+}
+function saveAttendance(){
+  const classId=document.getElementById('att-class-sel')?.value;
+  const date=document.getElementById('att-date-pick')?.value||SNS.todayKey();
+  const students=SNS.getStudentsByClass(classId);
+  const records={};
+  students.forEach(s=>{const r=document.querySelector(`input[name="att_${s.id}"]:checked`);records[s.id]=r?r.value:'P';});
+  SNS.markAttendance(date,classId,records);
+  SNS.toast('Attendance saved for '+SNS.getClassLabel(classId));
+  renderAttendancePage(); renderDashboard();
+}
+
+// ── TEACHERS ──
+function renderTeachers(){
+  const teachers=SNS.getTeachers();
+  const lbl=document.getElementById('teacher-count');
+  if(lbl)lbl.textContent=teachers.length+' teacher(s) on record';
+  const tbody=document.getElementById('teacher-tbody');
+  if(!tbody)return;
+  if(teachers.length===0){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--g500);padding:24px;">No teachers added yet.</td></tr>';return;}
+  tbody.innerHTML=teachers.map(t=>`<tr><td><strong>${t.name}</strong></td><td>${t.subject}</td><td>${t.classId?SNS.getClassLabel(t.classId):'—'}</td><td>${t.contact||'—'}</td><td>${t.qualification||'—'}</td></tr>`).join('');
+}
+function addTeacher(){
+  const name=document.getElementById('t-name').value.trim();
+  if(!name){SNS.toast('Teacher name required','danger');return;}
+  SNS.addTeacher({name,subject:document.getElementById('t-subject').value,classId:document.getElementById('t-class').value,contact:document.getElementById('t-contact').value,qualification:document.getElementById('t-qual').value,joiningDate:document.getElementById('t-join').value});
+  SNS.closeModal('modal-teacher');SNS.toast('Teacher added: '+name);
+  renderTeachers();populateClassDropdowns();renderDashboard();
+}
+
+// ── CLASSES ──
+function renderClasses(){
+  const cls=SNS.getClasses();
+  const tbody=document.getElementById('class-tbody');
+  if(!tbody)return;
+  tbody.innerHTML=cls.map(c=>{
+    const subList=(SNS.getSubjects(c.id)||[]).join(', ');
+    return`<tr><td><strong>${c.name}</strong></td><td>${c.section}</td><td>${c.classTeacherId?SNS.getTeacherName(c.classTeacherId):'<span class="muted">Not assigned</span>'}</td><td>${c.strength}</td><td style="max-width:250px;font-size:12px;color:var(--g600);">${subList}</td></tr>`;
+  }).join('');
+}
+function addClass(){
+  const name=document.getElementById('cls-num').value;
+  const sec=document.getElementById('cls-sec').value.trim().toUpperCase()||'A';
+  const teacherId=document.getElementById('cls-teacher').value;
+  const cls=SNS.getClasses();
+  const id='c'+name.replace('Class ','').toLowerCase()+sec.toLowerCase();
+  if(cls.find(c=>c.id===id)){SNS.toast('Section already exists','danger');return;}
+  cls.push({id,name,section:sec,classTeacherId:teacherId,strength:0});
+  SNS.saveClasses(cls);SNS.closeModal('modal-class');SNS.toast('Class section added');
+  renderClasses();populateClassDropdowns();
+}
+
+// ── EXAMS ──
+function renderExams(){
+  const exams=SNS.getExams();
+  const lbl=document.getElementById('exam-count-lbl');
+  if(lbl)lbl.textContent=exams.length+' exam(s) scheduled';
+  const tbody=document.getElementById('exam-tbody');
+  if(!tbody)return;
+  if(exams.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--g500);padding:24px;">No exams scheduled yet.</td></tr>';return;}
+  tbody.innerHTML=exams.map(e=>{
+    const today=SNS.todayKey();
+    const status=e.date<today?'Completed':e.date===today?'Today':'Upcoming';
+    const bclass=status==='Completed'?'gray':status==='Today'?'warn':'info';
+    return`<tr><td><strong>${e.name}</strong></td><td>${SNS.getClassLabel(e.classId)}</td><td>${e.subject}</td><td>${SNS.fmtDate(e.date)}</td><td>${e.maxMarks}</td><td><span class="badge ${bclass}">${status}</span></td></tr>`;
+  }).join('');
+}
+function scheduleExam(){
+  const classId=document.getElementById('ex-class').value;
+  const subject=document.getElementById('ex-subject').value;
+  const date=document.getElementById('ex-date').value;
+  if(!classId||!subject||!date){SNS.toast('Class, subject and date required','danger');return;}
+  SNS.addExam({name:document.getElementById('ex-name').value,classId,subject,date,maxMarks:document.getElementById('ex-max').value,passMarks:document.getElementById('ex-pass').value});
+  SNS.closeModal('modal-exam');SNS.toast('Exam scheduled');
+  renderExams();populateMarksSelects();populateResultsSelects();
+}
+function populateMarksSelects(){
+  const exams=SNS.getExams();const cls=SNS.getClasses();
+  const es=document.getElementById('marks-exam-sel');const cs=document.getElementById('marks-class-sel');
+  if(es)es.innerHTML='<option value="">Select exam</option>'+exams.map(e=>`<option value="${e.id}">${e.name} — ${SNS.getClassLabel(e.classId)} (${e.subject})</option>`).join('');
+  if(cs)cs.innerHTML='<option value="">Select class</option>'+cls.map(c=>`<option value="${c.id}">${c.name}-${c.section}</option>`).join('');
+}
+function populateResultsSelects(){
+  const exams=SNS.getExams();const cls=SNS.getClasses();
+  const es=document.getElementById('res-exam-sel');const cs=document.getElementById('res-class-sel');
+  if(es)es.innerHTML='<option value="">Select exam</option>'+exams.map(e=>`<option value="${e.id}">${e.name} — ${SNS.getClassLabel(e.classId)} (${e.subject})</option>`).join('');
+  if(cs)cs.innerHTML='<option value="">Select class</option>'+cls.map(c=>`<option value="${c.id}">${c.name}-${c.section}</option>`).join('');
+}
+function loadMarksEntry(){
+  const examId=document.getElementById('marks-exam-sel')?.value;
+  const classId=document.getElementById('marks-class-sel')?.value;
+  const area=document.getElementById('marks-entry-area');
+  if(!area)return;
+  if(!examId||!classId){area.innerHTML='';return;}
+  const exam=SNS.getExams().find(e=>e.id===examId);
+  const students=SNS.getStudentsByClass(classId);
+  const existing=SNS.getMarks(examId,classId);
+  if(students.length===0){area.innerHTML='<p class="muted">No students in this class.</p>';return;}
+  area.innerHTML=`<p class="muted mb3">Exam: <strong>${exam?.name}</strong> | Subject: <strong>${exam?.subject}</strong> | Max: <strong>${exam?.maxMarks}</strong></p>
+  <div class="tw"><table><thead><tr><th>Roll</th><th>Student</th><th>Marks obtained (out of ${exam?.maxMarks})</th><th>Grade</th></tr></thead><tbody>
+  ${students.map(s=>{const m=existing[s.id]||'';return`<tr><td>${s.rollNo}</td><td>${s.name}</td><td><input type="number" id="m_${s.id}" value="${m}" min="0" max="${exam?.maxMarks}" style="width:80px;padding:5px 8px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;" oninput="updateGrade(this,'${exam?.maxMarks}','g_${s.id}')"></td><td id="g_${s.id}" style="font-weight:600;">${m?cbseGrade(Number(m),Number(exam?.maxMarks)):'—'}</td></tr>`}).join('')}
+  </tbody></table></div>
+  <div class="mt3"><button class="btn btn-gold" onclick="saveMarks('${examId}','${classId}','${exam?.maxMarks}')">💾 Save marks</button></div>`;
+}
+function cbseGrade(marks,max){const pct=marks/max*100;if(pct>=91)return'A1';if(pct>=81)return'A2';if(pct>=71)return'B1';if(pct>=61)return'B2';if(pct>=51)return'C1';if(pct>=41)return'C2';if(pct>=33)return'D';return'E';}
+function updateGrade(input,max,gradeId){const g=document.getElementById(gradeId);if(g&&input.value)g.textContent=cbseGrade(Number(input.value),Number(max));}
+function saveMarks(examId,classId,max){
+  const students=SNS.getStudentsByClass(classId);const marks={};
+  students.forEach(s=>{const v=document.getElementById('m_'+s.id)?.value;if(v!==undefined&&v!=='')marks[s.id]=v;});
+  SNS.saveMarks(examId,classId,marks);SNS.toast('Marks saved successfully');loadResults();
+}
+function loadResults(){
+  const examId=document.getElementById('res-exam-sel')?.value;
+  const classId=document.getElementById('res-class-sel')?.value;
+  const area=document.getElementById('results-area');
+  if(!area)return;
+  if(!examId||!classId){area.innerHTML='';return;}
+  const exam=SNS.getExams().find(e=>e.id===examId);
+  const students=SNS.getStudentsByClass(classId);
+  const marks=SNS.getMarks(examId,classId);
+  const pass=Number(exam?.passMarks||33);const max=Number(exam?.maxMarks||100);
+  area.innerHTML=`<div class="tw"><table><thead><tr><th>Roll</th><th>Name</th><th>Marks</th><th>%</th><th>Grade</th><th>Result</th></tr></thead><tbody>
+  ${students.map(s=>{const m=marks[s.id];const pct=m?Math.round(Number(m)/max*100):null;return`<tr><td>${s.rollNo}</td><td>${s.name}</td><td>${m||'—'}</td><td>${pct!==null?pct+'%':'—'}</td><td>${m?cbseGrade(Number(m),max):'—'}</td><td>${m?`<span class="badge ${Number(m)>=pass?'ok':'err'}">${Number(m)>=pass?'Pass':'Fail'}</span>`:'<span class="badge gray">Pending</span>'}</td></tr>`}).join('')}
+  </tbody></table></div>`;
+}
+
+// ── FEES ──
+function renderFees(){
+  const fs=SNS.getFeeSummary();
+  const stats=document.getElementById('fee-stats');
+  if(stats)stats.innerHTML=`
+    <div class="sc gn"><div class="sc-icon">💰</div><div class="sc-val">${SNS.fmtMoney(fs.todayAmt)}</div><div class="sc-lbl">Collected today</div></div>
+    <div class="sc g"><div class="sc-icon">📊</div><div class="sc-val">${SNS.fmtMoney(fs.total)}</div><div class="sc-lbl">Total this session</div></div>
+    <div class="sc bl"><div class="sc-icon">🧾</div><div class="sc-val">${fs.count}</div><div class="sc-lbl">Total receipts</div></div>`;
+  const recs=SNS.getFeeRecords().slice().reverse().slice(0,20);
+  const tbody=document.getElementById('fee-tbody');
+  if(!tbody)return;
+  if(recs.length===0){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--g500);padding:16px;">No fee records yet.</td></tr>';return;}
+  tbody.innerHTML=recs.map(r=>`<tr><td style="font-size:11px;">${r.receiptNo}</td><td>${r.studentName}</td><td style="font-weight:700;color:var(--ok);">${SNS.fmtMoney(r.amount)}</td><td>${r.feeType}</td><td>${SNS.fmtDate(r.date)}</td></tr>`).join('');
+}
+function collectFee(){
+  const stuId=document.getElementById('fee-stu-sel').value;
+  const amount=document.getElementById('fee-amount').value;
+  const date=document.getElementById('fee-date').value;
+  if(!stuId||!amount||!date){SNS.toast('Student, amount and date are required','danger');return;}
+  const stu=SNS.getStudents().find(s=>s.id===stuId);
+  const r=SNS.addFeeRecord({studentId:stuId,studentName:stu?.name||'Unknown',classId:stu?.classId,admissionNo:stu?.admissionNo,amount:Number(amount),feeType:document.getElementById('fee-type').value,month:document.getElementById('fee-month').value,mode:document.getElementById('fee-mode').value,date,remarks:document.getElementById('fee-remarks').value});
+  SNS.toast(`Receipt ${r.receiptNo} generated for ${SNS.fmtMoney(amount)}`);
+  document.getElementById('fee-amount').value=''; document.getElementById('fee-remarks').value='';
+  renderFees();renderDashboard();printReceipt(r,stu);
+}
+function printReceipt(r,stu){
+  const w=window.open('','_blank','width=400,height=500');
+  w.document.write(`<html><head><title>Fee Receipt</title><style>body{font-family:Arial,sans-serif;padding:24px;font-size:13px;}h2{color:#0d2b55;margin-bottom:4px;}hr{border:1px solid #ccc;margin:12px 0;}.row{display:flex;justify-content:space-between;margin:6px 0;}.big{font-size:18px;font-weight:700;color:#2e7d32;}.footer{text-align:center;margin-top:20px;font-size:11px;color:#888;}</style></head><body>
+  <h2>Sadhana Nivriti School</h2><p style="color:#666;font-size:12px;">Chotpur, Noida | Session 2025-26</p><hr>
+  <p style="text-align:center;font-weight:700;font-size:14px;">FEE RECEIPT</p><hr>
+  <div class="row"><span>Receipt No.:</span><span><strong>${r.receiptNo}</strong></span></div>
+  <div class="row"><span>Date:</span><span>${r.date}</span></div>
+  <div class="row"><span>Student:</span><span><strong>${stu?.name}</strong></span></div>
+  <div class="row"><span>Class:</span><span>${SNS.getClassLabel(stu?.classId)}</span></div>
+  <div class="row"><span>Adm. No.:</span><span>${stu?.admissionNo}</span></div>
+  <div class="row"><span>Fee type:</span><span>${r.feeType} — ${r.month}</span></div>
+  <div class="row"><span>Mode:</span><span>${r.mode}</span></div>
+  <hr><div class="row"><span>Amount paid:</span><span class="big">₹${Number(r.amount).toLocaleString('en-IN')}</span></div><hr>
+  <div class="footer">This is a computer-generated receipt.<br>Sadhana Nivriti School, Chotpur, Noida</div>
+  <script>window.onload=()=>{window.print();}<\/script></body></html>`);
+}
+
+// ── TIMETABLE ──
+const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const PERIODS=['Period 1','Period 2','Period 3','Break','Period 4','Period 5','Period 6'];
+function populateTimetableClass(){
+  const sel=document.getElementById('tt-class-sel');
+  if(!sel)return;
+  sel.innerHTML=SNS.getClasses().map(c=>`<option value="${c.id}">${c.name}-${c.section}</option>`).join('');
+  renderTimetable();
+}
+function renderTimetable(){
+  const classId=document.getElementById('tt-class-sel')?.value;
+  if(!classId)return;
+  const tt=SNS.getTimetable(classId);
+  const subs=SNS.getSubjects(classId);
+  const table=document.getElementById('tt-table');
+  if(!table)return;
+  table.innerHTML=`<thead><tr><th>Period</th>${DAYS.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>
+  ${PERIODS.map(p=>`<tr><td><strong>${p}</strong></td>${DAYS.map(d=>{
+    if(p==='Break')return`<td style="background:var(--g50);color:var(--g500);text-align:center;font-size:12px;">Break</td>`;
+    const val=(tt[d]||{})[p]||'';
+    return`<td><select style="width:100%;border:1px solid var(--g300);border-radius:var(--r);padding:4px 6px;font-size:12px;" id="tt_${d}_${p}"><option value="">—</option>${subs.map(s=>`<option ${val===s?'selected':''}>${s}</option>`).join('')}</select></td>`;
+  }).join('')}</tr>`).join('')}
+  </tbody>`;
+}
+function saveTimetable(){
+  const classId=document.getElementById('tt-class-sel')?.value;
+  if(!classId)return;
+  const tt={};
+  DAYS.forEach(d=>{tt[d]={};PERIODS.forEach(p=>{if(p!=='Break'){const el=document.getElementById(`tt_${d}_${p}`);if(el&&el.value)tt[d][p]=el.value;}});});
+  SNS.saveTimetable(classId,tt);SNS.toast('Timetable saved for '+SNS.getClassLabel(classId));
+}
+
+// ── ENQUIRIES ──
+function renderEnquiries(){
+  const enq=SNS.getEnquiries();
+  const lbl=document.getElementById('enq-count');
+  if(lbl)lbl.textContent=enq.length+' enquiries on record';
+  const tbody=document.getElementById('enq-tbody');
+  if(!tbody)return;
+  if(enq.length===0){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--g500);padding:24px;">No enquiries yet.</td></tr>';return;}
+  tbody.innerHTML=enq.slice().reverse().map(e=>`<tr>
+    <td>${SNS.fmtDate(e.createdAt)}</td><td><strong>${e.name}</strong><br><span style="font-size:11px;color:var(--g500);">Parent: ${e.parentName||'—'}</span></td>
+    <td>${e.classId}</td><td>${e.contact||'—'}</td><td>${e.source}</td>
+    <td><span class="badge ${e.status==='admitted'?'ok':e.status==='pending'?'warn':'gray'}">${e.status}</span></td>
+    <td><button class="btn btn-sm btn-ok" onclick="convertEnquiry('${e.id}')">Admit</button></td>
+  </tr>`).join('');
+}
+function addEnquiry(){
+  const name=document.getElementById('enq-name').value.trim();
+  if(!name){SNS.toast('Child name required','danger');return;}
+  SNS.addEnquiry({name,classId:document.getElementById('enq-class').value,parentName:document.getElementById('enq-parent').value,contact:document.getElementById('enq-contact').value,source:document.getElementById('enq-source').value,remarks:document.getElementById('enq-remarks').value});
+  SNS.closeModal('modal-enquiry');SNS.toast('Enquiry saved');
+  ['enq-name','enq-parent','enq-contact','enq-remarks'].forEach(id=>document.getElementById(id).value='');
+  renderEnquiries();renderDashboard();
+}
+function convertEnquiry(id){
+  const all=SNS.getEnquiries();const e=all.find(x=>x.id===id);if(!e)return;
+  e.status='admitted';SNS.set('enquiries',all);SNS.toast('Marked as admitted. Now add them via Admit Student.');renderEnquiries();
+}
+
+// ── SETTINGS ──
+function changePasscode(){
+  const panel=document.getElementById('chg-panel').value;
+  const code=document.getElementById('chg-code').value;
+  const code2=document.getElementById('chg-code2').value;
+  if(!code||code.length<6){SNS.toast('Passcode must be at least 6 characters','danger');return;}
+  if(code!==code2){SNS.toast('Passcodes do not match','danger');return;}
+  SNS.updatePasscode(panel,code);SNS.toast(panel+' passcode updated successfully');
+  document.getElementById('chg-code').value='';document.getElementById('chg-code2').value='';
+}
+function exportData(){
+  const data={_app:'SNS School Management',_exportedAt:new Date().toISOString(),keys:{}};
+  Object.keys(localStorage).filter(k=>k.startsWith('sns_')).forEach(k=>{data.keys[k]=localStorage.getItem(k);});
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SNS_backup_'+SNS.todayKey()+'.json';a.click();
+  SNS.toast('Complete backup exported ('+Object.keys(data.keys).length+' records)');
+}
+function importData(input){
+  const file=input.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.keys||data._app!=='SNS School Management'){SNS.toast('Invalid backup file','danger');return;}
+      if(!confirm('Restore backup from '+(data._exportedAt||'unknown date')+'? Existing data will be replaced.'))return;
+      Object.keys(localStorage).filter(k=>k.startsWith('sns_')).forEach(k=>localStorage.removeItem(k));
+      Object.entries(data.keys).forEach(([k,v])=>localStorage.setItem(k,v));
+      SNS.toast('Backup restored — reloading...');
+      setTimeout(()=>location.reload(),1200);
+    }catch(err){SNS.toast('Could not read backup file','danger');}
+  };
+  reader.readAsText(file); input.value='';
+}
+function exportReport(){
+  const students=SNS.getStudents().filter(s=>s.status==='active');
+  const csv='Adm No,Name,Class,Roll,Father,Contact\n'+students.map(s=>`${s.admissionNo},"${s.name}",${SNS.getClassLabel(s.classId)},${s.rollNo},"${s.fatherName||''}",${s.contact||''}`).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='SNS_students_'+SNS.todayKey()+'.csv';a.click();
+  SNS.toast('Student report downloaded');
+}
+function clearData(){Object.keys(localStorage).filter(k=>k.startsWith('sns_')).forEach(k=>localStorage.removeItem(k));SNS.toast('All data cleared','warning');setTimeout(()=>location.reload(),1000);}
+
+// ── DEMO DATA ──
+function loadDemoData(){
+  const teacherData=[
+    {name:'Sunita Sharma',subject:'Hindi',classKey:'c1a',contact:'9810011001',qualification:'M.A., B.Ed'},
+    {name:'Rajeev Verma',subject:'Mathematics',classKey:'c5a',contact:'9810011002',qualification:'M.Sc, B.Ed'},
+    {name:'Pooja Gupta',subject:'English',classKey:'c8a',contact:'9810011003',qualification:'M.A., B.Ed'},
+    {name:'Amit Tyagi',subject:'Science',classKey:'c10a',contact:'9810011004',qualification:'M.Sc, B.Ed'},
+  ];
+  const addedTeachers=teacherData.map(t=>SNS.addTeacher({name:t.name,subject:t.subject,classId:t.classKey,contact:t.contact,qualification:t.qualification}));
+  // assign class teachers
+  const classes=SNS.getClasses();
+  teacherData.forEach((t,i)=>{const c=classes.find(x=>x.id===t.classKey);if(c)c.classTeacherId=addedTeachers[i].id;});
+  SNS.saveClasses(classes);
+  const firstNames=['Aarav','Diya','Rohan','Ananya','Kabir','Ishita','Arjun','Meera','Vivaan','Sara','Aditya','Priya','Kunal','Riya','Dev'];
+  const lastNames=['Sharma','Verma','Gupta','Singh','Yadav','Tyagi','Chauhan','Mishra'];
+  const demoClasses=['c1a','c1b','c2a','c5a','c8a','c10a'];
+  let n=0;
+  demoClasses.forEach(cid=>{
+    for(let i=0;i<6;i++){
+      const fn=firstNames[n%firstNames.length];const ln=lastNames[n%lastNames.length];n++;
+      SNS.addStudent({name:fn+' '+ln,classId:cid,gender:n%2?'Male':'Female',fatherName:'Sh. '+['Rakesh','Suresh','Mahesh','Dinesh'][n%4]+' '+ln,motherName:'Smt. '+['Sunita','Anita','Kavita','Babita'][n%4]+' '+ln,contact:'98'+String(10000000+n*7919).slice(0,8)});
+    }
+  });
+  // mark today's attendance for 3 classes
+  const today=SNS.todayKey();
+  ['c1a','c5a','c10a'].forEach(cid=>{
+    const stu=SNS.getStudentsByClass(cid);const rec={};
+    stu.forEach((s,i)=>rec[s.id]=i%7===3?'A':'P');
+    SNS.markAttendance(today,cid,rec);
+  });
+  // a couple of fee records
+  const allStu=SNS.getStudents().filter(s=>s.status==='active').slice(0,5);
+  allStu.forEach((s,i)=>SNS.addFeeRecord({studentId:s.id,studentName:s.name,classId:s.classId,admissionNo:s.admissionNo,amount:1200+i*300,feeType:'Tuition Fee',month:'July 2025',mode:i%2?'Cash':'UPI',date:today}));
+  // one exam with marks
+  const ex=SNS.addExam({name:'Unit Test 1',classId:'c5a',subject:'Mathematics',date:today,maxMarks:'50',passMarks:'17'});
+  const c5=SNS.getStudentsByClass('c5a');const mk={};
+  c5.forEach((s,i)=>mk[s.id]=String(20+(i*6)%30));
+  SNS.saveMarks(ex.id,'c5a',mk);
+  // enquiries
+  SNS.addEnquiry({name:'Tanish Aggarwal',classId:'Class 3',parentName:'Vipin Aggarwal',contact:'9899911223',source:'Walk-in',remarks:'Wants mid-session admission'});
+  SNS.addEnquiry({name:'Navya Joshi',classId:'Class 6',parentName:'Deepak Joshi',contact:'9811223344',source:'Reference'});
+  SNS.toast('Demo data loaded! Explore the dashboard.');
+  populateClassDropdowns();renderDashboard();renderStudents();renderTeachers();renderExams();renderFees();renderClasses();renderEnquiries();renderAttendancePage();
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
