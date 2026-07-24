@@ -6,65 +6,100 @@
 <meta name="theme-color" content="#0d2b55">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><circle cx=%2750%27 cy=%2750%27 r=%2748%27 fill=%27%23c9a84c%27/><text x=%2750%27 y=%2768%27 font-size=%2750%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-weight=%27bold%27 fill=%27%23081a38%27>SN</text></svg>">
 <link rel="stylesheet" href="style.css">
+<style>
+.welcome-small{font-size:15px;color:rgba(255,255,255,.65);text-align:center;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.welcome-big{font-size:26px;font-weight:800;color:#fff;text-align:center;line-height:1.35;letter-spacing:.5px;margin-bottom:4px;}
+.welcome-big span{color:var(--gold-light);}
+.admin-link{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:26px;color:rgba(255,255,255,.35);font-size:12px;cursor:pointer;background:none;border:none;font-family:inherit;transition:color .15s;width:100%;}
+.admin-link:hover{color:var(--gold-light);}
+.panel-btns2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px;}
+@media(max-width:420px){.welcome-big{font-size:21px;}}
+</style>
 </head>
 <body>
 <div class="login-pg">
   <div class="login-box">
     <div class="login-logo">SN</div>
-    <div class="login-name">Sadhana Nivriti School</div>
-    <div class="login-loc">Chotpur, Noida &nbsp;|&nbsp; Session 2025-26</div>
+    <div class="welcome-small">Welcome to</div>
+    <div class="welcome-big">SADHANA NIVRITI SCHOOL,<br><span>CHOTPUR</span></div>
+    <div class="login-loc">Noida &nbsp;|&nbsp; Session 2025-26</div>
 
-    <div class="panel-btns">
-      <button class="pbtn active" onclick="selectPanel('admin',this)">
-        <div class="pi">🏫</div><div class="pl">Admin</div>
-      </button>
-      <button class="pbtn" onclick="selectPanel('teacher',this)">
+    <div class="panel-btns2">
+      <button class="pbtn active" id="pb-teacher" onclick="selectPanel('teacher',this)">
         <div class="pi">👩‍🏫</div><div class="pl">Teacher</div>
       </button>
-      <button class="pbtn" onclick="selectPanel('parent',this)">
+      <button class="pbtn" id="pb-parent" onclick="selectPanel('parent',this)">
         <div class="pi">👨‍👧</div><div class="pl">Parent</div>
       </button>
     </div>
 
     <div class="login-card">
+      <div class="fg" id="username-group" style="margin-bottom:14px;">
+        <label id="un-label">Registered mobile number</label>
+        <input type="text" id="username" placeholder="10-digit mobile number" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
       <div class="fg">
-        <label id="pc-label">Admin passcode</label>
+        <label id="pc-label">Teacher passcode</label>
         <input type="password" id="passcode" placeholder="Enter passcode" onkeydown="if(event.key==='Enter')doLogin()">
         <div class="lerr" id="lerr">Incorrect passcode. Please try again.</div>
       </div>
       <button class="btn btn-login" onclick="doLogin()">Sign in →</button>
     </div>
 
-    <p style="text-align:center;color:rgba(255,255,255,.3);font-size:11px;margin-top:20px;">
-      Sadhana Nivriti School Management System v1.0
+    <button class="admin-link" id="pb-admin" onclick="selectPanel('admin',this)">
+      <span>⚙</span> School administration login
+    </button>
+
+    <p style="text-align:center;color:rgba(255,255,255,.25);font-size:11px;margin-top:14px;">
+      Sadhana Nivriti School Management System v1.1
     </p>
   </div>
 </div>
 <script src="app.js"></script>
 <script>
-let selectedPanel = 'admin';
+let selectedPanel = 'teacher';
+const PANEL_CFG = {
+  teacher: {un:'Registered mobile number', unPh:'10-digit mobile number', pc:'Teacher passcode', showUn:true},
+  parent:  {un:'Admission number (username)', unPh:'e.g. SNS/2026/0001', pc:'Parent passcode', showUn:true},
+  admin:   {un:'', unPh:'', pc:'Admin passcode', showUn:false},
+};
 function selectPanel(p, el) {
   selectedPanel = p;
   document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  const labels = {admin:'Admin passcode', teacher:'Teacher passcode', parent:'Parent passcode'};
-  document.getElementById('pc-label').textContent = labels[p];
+  if (p !== 'admin') el.classList.add('active');
+  const cfg = PANEL_CFG[p];
+  document.getElementById('username-group').style.display = cfg.showUn ? 'flex' : 'none';
+  document.getElementById('un-label').textContent = cfg.un;
+  document.getElementById('username').placeholder = cfg.unPh;
+  document.getElementById('pc-label').textContent = cfg.pc;
+  document.getElementById('username').value = '';
   document.getElementById('passcode').value = '';
   document.getElementById('lerr').classList.remove('show');
+  document.getElementById('pb-admin').style.color = p==='admin' ? 'var(--gold-light)' : '';
+  if (p==='admin') document.getElementById('passcode').focus();
 }
+function showErr(msg){const e=document.getElementById('lerr');e.textContent=msg;e.classList.add('show');}
 function doLogin() {
   const code = document.getElementById('passcode').value.trim();
-  const err = document.getElementById('lerr');
-  if (!code) { err.textContent = 'Please enter your passcode.'; err.classList.add('show'); return; }
-  if (SNS.checkPasscode(selectedPanel, code)) {
-    SNS.setSession(selectedPanel);
-    const dest = {admin:'admin.html', teacher:'teacher.html', parent:'parent.html'};
-    window.location.href = dest[selectedPanel];
-  } else {
-    err.textContent = 'Incorrect passcode. Please try again.';
-    err.classList.add('show');
-    document.getElementById('passcode').value = '';
+  if (!code) { showErr('Please enter your passcode.'); return; }
+  if (selectedPanel === 'parent') {
+    const admNo = document.getElementById('username').value.trim();
+    if (!admNo) { showErr('Please enter your admission number.'); return; }
+    const r = SNS.checkParentLogin(admNo, code);
+    if (r.ok) { SNS.setParentSession(r.student.admissionNo); window.location.href='parent.html'; }
+    else { showErr(r.reason==='notfound' ? 'Admission number not found. Please check with the school office.' : 'Incorrect passcode. Please try again.'); document.getElementById('passcode').value=''; }
+    return;
   }
+  if (selectedPanel === 'teacher') {
+    const mobile = document.getElementById('username').value.trim();
+    if (!mobile) { showErr('Please enter your registered mobile number.'); return; }
+    const r = SNS.checkTeacherLogin(mobile, code);
+    if (r.ok) { SNS.setTeacherSession(r.teacher.id); window.location.href='teacher.html'; }
+    else { showErr(r.reason==='notfound' ? 'Mobile number not registered. Please contact the school office.' : 'Incorrect passcode. Please try again.'); document.getElementById('passcode').value=''; }
+    return;
+  }
+  if (SNS.checkPasscode('admin', code)) { SNS.setSession('admin'); window.location.href='admin.html'; }
+  else { showErr('Incorrect passcode. Please try again.'); document.getElementById('passcode').value=''; }
 }
 </script>
 </body>

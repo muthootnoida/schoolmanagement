@@ -10,7 +10,32 @@ const SNS = {
   getPasscodes() { return this.gd('passcodes',{admin:'roshanbhagat92',teacher:'teacher@123',parent:'parent@123'}); },
   checkPasscode(panel,code) { return this.getPasscodes()[panel]===code; },
   updatePasscode(panel,code) { const c=this.getPasscodes(); c[panel]=code; this.set('passcodes',c); },
+  getParentPassMap() { return this.gd('parent_pw',{}); },
+  getParentPass(admNo) { return this.getParentPassMap()[admNo] || 'parent@123'; },
+  setParentPass(admNo,pw) { const m=this.getParentPassMap(); m[admNo]=pw; this.set('parent_pw',m); },
+  resetParentPass(admNo) { const m=this.getParentPassMap(); delete m[admNo]; this.set('parent_pw',m); },
+  checkParentLogin(admNo,code) {
+    const stu=this.getStudents().find(s=>s.admissionNo.toUpperCase()===admNo.toUpperCase()&&s.status==='active');
+    if(!stu) return {ok:false,reason:'notfound'};
+    if(this.getParentPass(stu.admissionNo)!==code) return {ok:false,reason:'wrongpass'};
+    return {ok:true,student:stu};
+  },
+  getTeacherPassMap() { return this.gd('teacher_pw',{}); },
+  getTeacherPass(tid) { return this.getTeacherPassMap()[tid] || 'teacher@123'; },
+  setTeacherPass(tid,pw) { const m=this.getTeacherPassMap(); m[tid]=pw; this.set('teacher_pw',m); },
+  resetTeacherPass(tid) { const m=this.getTeacherPassMap(); delete m[tid]; this.set('teacher_pw',m); },
+  checkTeacherLogin(mobile,code) {
+    const t=this.getTeachers().find(x=>(x.contact||'').replace(/\D/g,'')===mobile.replace(/\D/g,'')&&mobile.trim()!=='');
+    if(!t) return {ok:false,reason:'notfound'};
+    if(this.getTeacherPass(t.id)!==code) return {ok:false,reason:'wrongpass'};
+    return {ok:true,teacher:t};
+  },
+  getTeacherClasses(tid) { return this.getClasses().filter(c=>c.classTeacherId===tid); },
+  setTeacherSession(tid) { sessionStorage.setItem('sns_panel','teacher'); sessionStorage.setItem('sns_teacher_id',tid); },
+  getTeacherId() { return sessionStorage.getItem('sns_teacher_id'); },
   setSession(panel) { sessionStorage.setItem('sns_panel',panel); },
+  setParentSession(admNo) { sessionStorage.setItem('sns_panel','parent'); sessionStorage.setItem('sns_parent_adm',admNo); },
+  getParentAdm() { return sessionStorage.getItem('sns_parent_adm'); },
   getPanel() { return sessionStorage.getItem('sns_panel'); },
   logout() { sessionStorage.clear(); window.location.href='index.html'; },
   requireLogin(p) { const panel=this.getPanel(); if(!panel){window.location.href='index.html';return false;} if(p&&panel!==p&&panel!=='admin'){window.location.href='index.html';return false;} return true; },

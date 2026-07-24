@@ -197,12 +197,6 @@
               <div class="fg"><label>Student</label>
                 <select id="fee-stu-sel" style="width:100%;"><option value="">Select student</option></select>
               </div>
-              <div class="fg"><label>Fee type</label>
-                <select id="fee-type">
-                  <option>Tuition Fee</option><option>Annual Charges</option><option>Exam Fee</option>
-                  <option>Sports Fee</option><option>Lab Fee</option><option>Other</option>
-                </select>
-              </div>
               <div class="fg"><label>Month / Period</label>
                 <select id="fee-month">
                   <option>April 2025</option><option>May 2025</option><option>June 2025</option>
@@ -211,7 +205,15 @@
                   <option>January 2026</option><option>February 2026</option><option>March 2026</option>
                 </select>
               </div>
-              <div class="fg"><label>Amount (₹)</label><input type="number" id="fee-amount" placeholder="0" min="0"></div>
+            </div>
+            <div class="fg mt3"><label>Fee components — tick what the student is paying now</label>
+              <div id="fee-components" style="border:1px solid var(--g300);border-radius:var(--r);padding:6px 12px;"></div>
+            </div>
+            <div class="fbet mt3" style="background:var(--gold-pale);border:1px solid var(--gold);border-radius:var(--r);padding:10px 14px;">
+              <strong style="color:#7a5c00;">Total payable</strong>
+              <strong id="fee-total" style="font-size:18px;color:var(--navy);">₹0</strong>
+            </div>
+            <div class="form-row mt3">
               <div class="fg"><label>Payment mode</label>
                 <select id="fee-mode"><option>Cash</option><option>UPI</option><option>Cheque</option><option>Online</option></select>
               </div>
@@ -249,7 +251,8 @@
         <span class="muted" id="teacher-count"></span>
         <button class="btn btn-gold" onclick="SNS.openModal('modal-teacher')">+ Add teacher</button>
       </div>
-      <div class="card"><div class="tw"><table><thead><tr><th>Name</th><th>Subject</th><th>Class assigned</th><th>Contact</th><th>Qualification</th></tr></thead>
+      <div class="alert info">📱 Teachers log in with their registered mobile number + passcode (default teacher@123). Assign class teachers under Classes &amp; Subjects.</div>
+      <div class="card"><div class="tw"><table><thead><tr><th>Name</th><th>Subject</th><th>Class teacher of</th><th>Mobile (login)</th><th>Qualification</th><th>Actions</th></tr></thead>
       <tbody id="teacher-tbody"></tbody></table></div></div>
     </div>
 
@@ -270,12 +273,10 @@
       <div class="pg-title">Settings</div>
       <div class="pg-sub">System configuration and passcodes</div>
       <div class="card" style="max-width:480px;">
-        <div class="card-hdr"><span class="card-ttl">Change passcodes</span></div>
+        <div class="card-hdr"><span class="card-ttl">Change admin passcode</span></div>
         <div class="card-body">
+          <p class="muted mb3">Teacher and parent passcodes are individual — reset them from the Teachers and Students pages.</p>
           <div class="form-row">
-            <div class="fg"><label>Panel</label>
-              <select id="chg-panel"><option value="admin">Admin</option><option value="teacher">Teacher</option><option value="parent">Parent</option></select>
-            </div>
             <div class="fg"><label>New passcode</label><input type="password" id="chg-code" placeholder="New passcode"></div>
             <div class="fg"><label>Confirm</label><input type="password" id="chg-code2" placeholder="Confirm passcode"></div>
           </div>
@@ -332,8 +333,8 @@
       <div class="form-row">
         <div class="fg"><label>Full name *</label><input type="text" id="t-name" placeholder="Teacher name"></div>
         <div class="fg"><label>Subject *</label><input type="text" id="t-subject" placeholder="e.g. Mathematics, Hindi"></div>
-        <div class="fg"><label>Class assigned</label><select id="t-class"><option value="">None / multiple</option></select></div>
-        <div class="fg"><label>Contact *</label><input type="tel" id="t-contact" placeholder="Mobile number"></div>
+        <div class="fg"><label>Class teacher of (optional)</label><select id="t-class"><option value="">Not a class teacher</option></select></div>
+        <div class="fg"><label>Mobile number * (used as login username)</label><input type="tel" id="t-contact" placeholder="10-digit mobile" maxlength="10"></div>
         <div class="fg"><label>Qualification</label><input type="text" id="t-qual" placeholder="e.g. B.Ed, M.A."></div>
         <div class="fg"><label>Joining date</label><input type="date" id="t-join"></div>
       </div>
@@ -403,6 +404,7 @@ function init() {
   document.getElementById('fee-date').value = SNS.todayKey();
   document.getElementById('att-date-pick').value = SNS.todayKey();
   populateClassDropdowns();
+  renderFeeComponents();
   renderDashboard();
   renderStudents();
   renderTeachers();
@@ -544,7 +546,7 @@ function renderStudents() {
       <td>${s.fatherName||'—'}</td>
       <td>${s.contact||'—'}</td>
       <td><span class="badge ${s.status==='active'?'ok':'gray'}">${s.status}</span></td>
-      <td><button class="btn btn-sm btn-out" onclick="tcStudent('${s.id}')">TC</button></td>
+      <td><div class="bgrp"><button class="btn btn-sm btn-out" onclick="resetParentCode('${s.id}')" title="Reset parent login passcode to parent@123">🔑 Reset</button><button class="btn btn-sm btn-out" onclick="tcStudent('${s.id}')">TC</button></div></td>
     </tr>`).join('');
 }
 
@@ -575,6 +577,13 @@ function tcStudent(id){
   const all=SNS.getStudents(); all.find(x=>x.id===id).status='tc-issued';
   SNS.saveStudents(all); SNS.toast(`TC issued for ${s.name}`,'warning');
   renderStudents(); renderDashboard();
+}
+function resetParentCode(id){
+  const s=SNS.getStudents().find(x=>x.id===id);
+  if(!s)return;
+  if(!confirm(`Reset parent login passcode for ${s.name} (${s.admissionNo}) back to parent@123?`))return;
+  SNS.resetParentPass(s.admissionNo);
+  SNS.toast(`Parent passcode for ${s.admissionNo} reset to parent@123`);
 }
 
 // ── ATTENDANCE PAGE ──
@@ -643,26 +652,60 @@ function renderTeachers(){
   if(lbl)lbl.textContent=teachers.length+' teacher(s) on record';
   const tbody=document.getElementById('teacher-tbody');
   if(!tbody)return;
-  if(teachers.length===0){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--g500);padding:24px;">No teachers added yet.</td></tr>';return;}
-  tbody.innerHTML=teachers.map(t=>`<tr><td><strong>${t.name}</strong></td><td>${t.subject}</td><td>${t.classId?SNS.getClassLabel(t.classId):'—'}</td><td>${t.contact||'—'}</td><td>${t.qualification||'—'}</td></tr>`).join('');
+  if(teachers.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--g500);padding:24px;">No teachers added yet.</td></tr>';return;}
+  tbody.innerHTML=teachers.map(t=>{
+    const myClasses=SNS.getTeacherClasses(t.id).map(c=>c.name+'-'+c.section).join(', ');
+    return`<tr><td><strong>${t.name}</strong></td><td>${t.subject}</td><td>${myClasses||'<span class="muted">None</span>'}</td><td>${t.contact||'<span class="badge warn">No mobile — cannot log in</span>'}</td><td>${t.qualification||'—'}</td><td><button class="btn btn-sm btn-out" onclick="resetTeacherCode('${t.id}')" title="Reset this teacher's passcode to teacher@123">🔑 Reset</button></td></tr>`;
+  }).join('');
+}
+function resetTeacherCode(id){
+  const t=SNS.getTeachers().find(x=>x.id===id);
+  if(!t)return;
+  if(!confirm(`Reset login passcode for ${t.name} back to teacher@123?`))return;
+  SNS.resetTeacherPass(id);
+  SNS.toast(`Passcode for ${t.name} reset to teacher@123`);
 }
 function addTeacher(){
   const name=document.getElementById('t-name').value.trim();
+  const contact=document.getElementById('t-contact').value.trim().replace(/\D/g,'');
   if(!name){SNS.toast('Teacher name required','danger');return;}
-  SNS.addTeacher({name,subject:document.getElementById('t-subject').value,classId:document.getElementById('t-class').value,contact:document.getElementById('t-contact').value,qualification:document.getElementById('t-qual').value,joiningDate:document.getElementById('t-join').value});
-  SNS.closeModal('modal-teacher');SNS.toast('Teacher added: '+name);
-  renderTeachers();populateClassDropdowns();renderDashboard();
+  if(contact.length!==10){SNS.toast('A valid 10-digit mobile number is required — it is the teacher\'s login username','danger');return;}
+  if(SNS.getTeachers().some(t=>(t.contact||'').replace(/\D/g,'')===contact)){SNS.toast('This mobile number is already registered to another teacher','danger');return;}
+  const classId=document.getElementById('t-class').value;
+  const t=SNS.addTeacher({name,subject:document.getElementById('t-subject').value,classId,contact,qualification:document.getElementById('t-qual').value,joiningDate:document.getElementById('t-join').value});
+  if(classId){
+    const cls=SNS.getClasses();const c=cls.find(x=>x.id===classId);
+    if(c){c.classTeacherId=t.id;SNS.saveClasses(cls);}
+  }
+  SNS.closeModal('modal-teacher');SNS.toast('Teacher added: '+name+' (login: '+contact+' / teacher@123)');
+  renderTeachers();populateClassDropdowns();renderDashboard();renderClasses();
 }
 
 // ── CLASSES ──
 function renderClasses(){
   const cls=SNS.getClasses();
+  const teachers=SNS.getTeachers();
   const tbody=document.getElementById('class-tbody');
   if(!tbody)return;
   tbody.innerHTML=cls.map(c=>{
     const subList=(SNS.getSubjects(c.id)||[]).join(', ');
-    return`<tr><td><strong>${c.name}</strong></td><td>${c.section}</td><td>${c.classTeacherId?SNS.getTeacherName(c.classTeacherId):'<span class="muted">Not assigned</span>'}</td><td>${c.strength}</td><td style="max-width:250px;font-size:12px;color:var(--g600);">${subList}</td></tr>`;
+    const teacherSel=`<select onchange="assignClassTeacher('${c.id}',this.value)" style="padding:5px 9px;border:1px solid var(--g300);border-radius:var(--r);font-size:12px;min-width:150px;${c.classTeacherId?'':'border-color:var(--warn);'}">
+      <option value="">— Not assigned —</option>
+      ${teachers.map(t=>`<option value="${t.id}" ${c.classTeacherId===t.id?'selected':''}>${t.name}</option>`).join('')}
+    </select>`;
+    return`<tr><td><strong>${c.name}</strong></td><td>${c.section}</td><td>${teacherSel}</td><td>${c.strength}</td><td style="max-width:250px;font-size:12px;color:var(--g600);">${subList}</td></tr>`;
   }).join('');
+}
+function assignClassTeacher(classId,teacherId){
+  const cls=SNS.getClasses();
+  const c=cls.find(x=>x.id===classId);
+  if(!c)return;
+  const already=cls.find(x=>x.classTeacherId===teacherId&&x.id!==classId&&teacherId!=='');
+  if(already&&!confirm(`${SNS.getTeacherName(teacherId)} is already class teacher of ${already.name}-${already.section}. Assign to ${c.name}-${c.section} as well?`)){renderClasses();return;}
+  c.classTeacherId=teacherId;
+  SNS.saveClasses(cls);
+  SNS.toast(teacherId?`${SNS.getTeacherName(teacherId)} assigned as class teacher of ${c.name}-${c.section}`:`Class teacher removed from ${c.name}-${c.section}`);
+  renderClasses();renderDashboard();renderAttendancePage();
 }
 function addClass(){
   const name=document.getElementById('cls-num').value;
@@ -764,20 +807,63 @@ function renderFees(){
   if(recs.length===0){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--g500);padding:16px;">No fee records yet.</td></tr>';return;}
   tbody.innerHTML=recs.map(r=>`<tr><td style="font-size:11px;">${r.receiptNo}</td><td>${r.studentName}</td><td style="font-weight:700;color:var(--ok);">${SNS.fmtMoney(r.amount)}</td><td>${r.feeType}</td><td>${SNS.fmtDate(r.date)}</td></tr>`).join('');
 }
+const FEE_COMPONENTS=['Tuition Fee','Admission Fee','Annual Charges','Exam Fee','Sports Fee','Lab Fee','Computer Fee','Transport Fee','Other'];
+function renderFeeComponents(){
+  const box=document.getElementById('fee-components');
+  if(!box)return;
+  box.innerHTML=FEE_COMPONENTS.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--g100);">
+      <label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;font-size:13px;">
+        <input type="checkbox" id="fc_${i}" onchange="toggleFeeComp(${i})"> ${c}
+      </label>
+      <input type="number" id="fca_${i}" placeholder="₹ amount" min="0" disabled
+        oninput="updateFeeTotal()" style="width:110px;padding:5px 9px;border:1px solid var(--g300);border-radius:var(--r);font-size:13px;">
+    </div>`).join('');
+}
+function toggleFeeComp(i){
+  const cb=document.getElementById('fc_'+i);const amt=document.getElementById('fca_'+i);
+  amt.disabled=!cb.checked;
+  if(!cb.checked)amt.value='';
+  else amt.focus();
+  updateFeeTotal();
+}
+function updateFeeTotal(){
+  let total=0;
+  FEE_COMPONENTS.forEach((c,i)=>{
+    if(document.getElementById('fc_'+i)?.checked)total+=Number(document.getElementById('fca_'+i)?.value||0);
+  });
+  document.getElementById('fee-total').textContent=SNS.fmtMoney(total);
+}
+function getSelectedComponents(){
+  const comps=[];
+  FEE_COMPONENTS.forEach((c,i)=>{
+    if(document.getElementById('fc_'+i)?.checked){
+      const amt=Number(document.getElementById('fca_'+i)?.value||0);
+      if(amt>0)comps.push({name:c,amount:amt});
+    }
+  });
+  return comps;
+}
 function collectFee(){
   const stuId=document.getElementById('fee-stu-sel').value;
-  const amount=document.getElementById('fee-amount').value;
   const date=document.getElementById('fee-date').value;
-  if(!stuId||!amount||!date){SNS.toast('Student, amount and date are required','danger');return;}
+  const comps=getSelectedComponents();
+  if(!stuId||!date){SNS.toast('Student and date are required','danger');return;}
+  if(comps.length===0){SNS.toast('Tick at least one fee component and enter its amount','danger');return;}
+  const total=comps.reduce((s,c)=>s+c.amount,0);
   const stu=SNS.getStudents().find(s=>s.id===stuId);
-  const r=SNS.addFeeRecord({studentId:stuId,studentName:stu?.name||'Unknown',classId:stu?.classId,admissionNo:stu?.admissionNo,amount:Number(amount),feeType:document.getElementById('fee-type').value,month:document.getElementById('fee-month').value,mode:document.getElementById('fee-mode').value,date,remarks:document.getElementById('fee-remarks').value});
-  SNS.toast(`Receipt ${r.receiptNo} generated for ${SNS.fmtMoney(amount)}`);
-  document.getElementById('fee-amount').value=''; document.getElementById('fee-remarks').value='';
+  const r=SNS.addFeeRecord({studentId:stuId,studentName:stu?.name||'Unknown',classId:stu?.classId,admissionNo:stu?.admissionNo,amount:total,components:comps,feeType:comps.map(c=>c.name).join(', '),month:document.getElementById('fee-month').value,mode:document.getElementById('fee-mode').value,date,remarks:document.getElementById('fee-remarks').value});
+  SNS.toast(`Receipt ${r.receiptNo} generated for ${SNS.fmtMoney(total)}`);
+  FEE_COMPONENTS.forEach((c,i)=>{const cb=document.getElementById('fc_'+i);if(cb){cb.checked=false;toggleFeeComp(i);}});
+  document.getElementById('fee-remarks').value='';
   renderFees();renderDashboard();printReceipt(r,stu);
 }
 function printReceipt(r,stu){
-  const w=window.open('','_blank','width=400,height=500');
-  w.document.write(`<html><head><title>Fee Receipt</title><style>body{font-family:Arial,sans-serif;padding:24px;font-size:13px;}h2{color:#0d2b55;margin-bottom:4px;}hr{border:1px solid #ccc;margin:12px 0;}.row{display:flex;justify-content:space-between;margin:6px 0;}.big{font-size:18px;font-weight:700;color:#2e7d32;}.footer{text-align:center;margin-top:20px;font-size:11px;color:#888;}</style></head><body>
+  const compRows=(r.components&&r.components.length)
+    ?r.components.map(c=>`<div class="row"><span>${c.name}</span><span>₹${Number(c.amount).toLocaleString('en-IN')}</span></div>`).join('')
+    :`<div class="row"><span>${r.feeType}</span><span>₹${Number(r.amount).toLocaleString('en-IN')}</span></div>`;
+  const w=window.open('','_blank','width=400,height=560');
+  w.document.write(`<html><head><title>Fee Receipt</title><style>body{font-family:Arial,sans-serif;padding:24px;font-size:13px;}h2{color:#0d2b55;margin-bottom:4px;}hr{border:1px solid #ccc;margin:12px 0;}.row{display:flex;justify-content:space-between;margin:6px 0;}.big{font-size:18px;font-weight:700;color:#2e7d32;}.footer{text-align:center;margin-top:20px;font-size:11px;color:#888;}.sec{font-weight:700;font-size:12px;color:#0d2b55;margin-top:10px;}</style></head><body>
   <h2>Sadhana Nivriti School</h2><p style="color:#666;font-size:12px;">Chotpur, Noida | Session 2025-26</p><hr>
   <p style="text-align:center;font-weight:700;font-size:14px;">FEE RECEIPT</p><hr>
   <div class="row"><span>Receipt No.:</span><span><strong>${r.receiptNo}</strong></span></div>
@@ -785,9 +871,11 @@ function printReceipt(r,stu){
   <div class="row"><span>Student:</span><span><strong>${stu?.name}</strong></span></div>
   <div class="row"><span>Class:</span><span>${SNS.getClassLabel(stu?.classId)}</span></div>
   <div class="row"><span>Adm. No.:</span><span>${stu?.admissionNo}</span></div>
-  <div class="row"><span>Fee type:</span><span>${r.feeType} — ${r.month}</span></div>
+  <div class="row"><span>Period:</span><span>${r.month}</span></div>
   <div class="row"><span>Mode:</span><span>${r.mode}</span></div>
-  <hr><div class="row"><span>Amount paid:</span><span class="big">₹${Number(r.amount).toLocaleString('en-IN')}</span></div><hr>
+  <hr><p class="sec">FEE COMPONENTS</p>
+  ${compRows}
+  <hr><div class="row"><span><strong>Total paid:</strong></span><span class="big">₹${Number(r.amount).toLocaleString('en-IN')}</span></div><hr>
   <div class="footer">This is a computer-generated receipt.<br>Sadhana Nivriti School, Chotpur, Noida</div>
   <script>window.onload=()=>{window.print();}<\/script></body></html>`);
 }
@@ -854,12 +942,11 @@ function convertEnquiry(id){
 
 // ── SETTINGS ──
 function changePasscode(){
-  const panel=document.getElementById('chg-panel').value;
   const code=document.getElementById('chg-code').value;
   const code2=document.getElementById('chg-code2').value;
   if(!code||code.length<6){SNS.toast('Passcode must be at least 6 characters','danger');return;}
   if(code!==code2){SNS.toast('Passcodes do not match','danger');return;}
-  SNS.updatePasscode(panel,code);SNS.toast(panel+' passcode updated successfully');
+  SNS.updatePasscode('admin',code);SNS.toast('Admin passcode updated successfully');
   document.getElementById('chg-code').value='';document.getElementById('chg-code2').value='';
 }
 function exportData(){
